@@ -1,0 +1,9 @@
+arrow
+matplotlib
+requests
+joblib
+penquins
+pandas
+numpy
+corner
+astropy
