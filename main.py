@@ -199,6 +199,7 @@ if __name__ == "__main__":
     parser.add_argument('--end', type=str, default=None, help='End time for the query')
     parser.add_argument('--k_token', type=str, default=None, help='Kowalski token')
     parser.add_argument('--n_threads', type=str, default=None, help='Number of threads to use when parallelizing queries')
+    parser.add_argument('--output_format', type=str, default='parquet', help='Output format for the results')
     args = parser.parse_args()
 
     if not args.k_token:
@@ -274,7 +275,16 @@ if __name__ == "__main__":
     if err:
         print(err)
         exit(1)
-    # save the dataframe to disk, with name <start>_<end>_<programids>.csv
-    filename = f"{t_i}_{t_f}_{'_'.join(map(str, programids))}.csv"
-    candidates.to_csv(filename, index=False)
+    # save the dataframe to disk, with name <start>_<end>_<programids>.extension
+    filename = f"{t_i}_{t_f}_{'_'.join(map(str, programids))}"
+    if args.output_format == "parquet":
+        filename = filename + ".parquet"
+        candidates.to_parquet(filename, index=False)
+    elif args.output_format == "feather":
+        filename = filename + ".feather"
+        candidates.to_feather(filename)
+    elif args.output_format == "csv":
+        filename = filename + ".csv"
+        candidates.to_csv(filename, index=False)
+
     print(f"Saved candidates to {filename}")
