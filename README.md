@@ -23,7 +23,7 @@ This would:
 You can run frigate with:
 
 ```bash
-PYTHONPATH=. python frigate -k_token=<your_token>
+PYTHONPATH=. python frigate --k_token=<your_token>
 ```
 
 To get the list of all possible arguments, you can run:
