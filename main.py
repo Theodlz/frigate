@@ -200,7 +200,25 @@ if __name__ == "__main__":
     parser.add_argument('--k_token', type=str, default=None, help='Kowalski token')
     parser.add_argument('--n_threads', type=str, default=None, help='Number of threads to use when parallelizing queries')
     parser.add_argument('--output_format', type=str, default='parquet', help='Output format for the results')
+    parser.add_argument('--output_compression', type=str, default=None, help='Output compression for the results')
+    parser.add_argument('--output_compression_level', type=int, default=None, help='Output compression level for the results')
     args = parser.parse_args()
+
+    if args.output_format not in ['parquet', 'feather', 'csv']:
+        print(f"Invalid output format: {args.output_format}, must be one of ['parquet', 'feather', 'csv']")
+
+    if args.output_format == 'parquet' and args.output_compression not in [None, 'gzip', 'snappy', 'brotli']:
+        print(f"Invalid output compression with parquet: {args.output_compression}, must be one of [None, 'gzip', 'snappy', 'brotli']")
+        exit(1)
+    if args.output_format == 'csv' and args.output_compression not in [None, 'infer', 'gzip', 'bz2', 'zip', 'xz']:
+        print(f"Invalid output compression with csv: {args.output_compression}, must be one of [None, 'infer', 'gzip', 'bz2', 'zip', 'xz']")
+        exit(1)
+    if args.output_format == 'feather' and args.output_compression not in [None, 'lz4', 'zstd', 'uncompressed']:
+        print(f"Invalid output compression with feather: {args.output_compression}, must be one of [None, 'lz4', 'zstd', 'uncompressed']")
+        exit(1)
+
+    if args.output_compression_level is not None and args.output_format not in ['feather']:
+        print(f"Compression level is only supported with feather, not {args.output_format}. Ignoring")
 
     if not args.k_token:
         print("No Kowalski token provided")
@@ -279,12 +297,12 @@ if __name__ == "__main__":
     filename = f"{t_i}_{t_f}_{'_'.join(map(str, programids))}"
     if args.output_format == "parquet":
         filename = filename + ".parquet"
-        candidates.to_parquet(filename, index=False)
+        candidates.to_parquet(filename, index=False, compression=args.output_compression)
     elif args.output_format == "feather":
         filename = filename + ".feather"
-        candidates.to_feather(filename)
+        candidates.to_feather(filename, compression=args.output_compression, compression_level=args.output_compression_level)
     elif args.output_format == "csv":
         filename = filename + ".csv"
-        candidates.to_csv(filename, index=False)
+        candidates.to_csv(filename, index=False, compression=args.output_compression)
 
     print(f"Saved candidates to {filename}")
