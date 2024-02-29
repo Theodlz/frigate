@@ -64,7 +64,11 @@ def main_parser():
         default="./data",
         help="Output directory for the results",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main_parser_args():
+    args = main_parser().parse_args()
 
     if not args.k_token:
         # we try to get the token from the environment if it is not provided here

@@ -1,6 +1,6 @@
 from frigate.utils.datasets import save_dataframe
 from frigate.utils.kowalski import get_candidates_from_kowalski
-from frigate.utils.parsers import main_parser
+from frigate.utils.parsers import main_parser_args
 
 
 def str_to_bool(value):
@@ -15,7 +15,7 @@ def str_to_bool(value):
 
 if __name__ == "__main__":
     # PARSE COMMAND LINE ARGUMENTS
-    args = main_parser()
+    args = main_parser_args()
 
     # GET CANDIDATES FROM KOWALSKI
     candidates, err = get_candidates_from_kowalski(
