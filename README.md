@@ -29,4 +29,4 @@ PYTHONPATH=. python scripts/alert-stats.py --feature='candidate.magpsf,candidate
 
 #### Troubleshooting
 
-On a system with low memory, you can call frigate with the `--low_memory` flag to reduce memory usage. This will save each subset of alerts to disk, and concatenate them at the end instead of concatenating as the batched queries return. That way we avoid growing the memory of the main process while the individual threads are running. In the future, we want to expand on that mode to reduce the nb of alerts fetched per batch query to reduce the memory usage even more.
+On a system with low memory, you can call frigate with the `--low_memory=True` flag to reduce memory usage. This will save each subset of alerts to disk, and concatenate them at the end instead of concatenating as the batched queries return. That way we avoid growing the memory of the main process while the individual threads are running. In the future, we want to expand on that mode to reduce the nb of alerts fetched per batch query to reduce the memory usage even more.
