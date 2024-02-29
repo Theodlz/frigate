@@ -13,6 +13,8 @@ from penquins import Kowalski
 from tqdm import tqdm
 import multiprocessing
 
+ZTF_ALERTS_CATALOG = "ZTF_alerts"
+
 def str_to_bool(value):
     if isinstance(value, bool):
         return value
@@ -21,54 +23,6 @@ def str_to_bool(value):
     elif value.lower() in {'true', 't', '1', 'yes', 'y'}:
         return True
     raise ValueError(f'{value} is not a valid boolean value')
-
-catalog = "ZTF_alerts"
-
-def get_candidates_from_skyportal(t_i, t_f, groupIDs, filterIDs, token, saved=False):
-    host = "https://fritz.science/api/candidates"
-    headers = {"Authorization": f"token {token}"}
-    # compute the isoformat of the start and end dates
-    start_date = Time(t_i, format='jd').iso
-    end_date = Time(t_f, format='jd').iso
-    page = 1
-    numPerPage = 100
-    queryID = None
-    total = None
-    candidates = []
-    if saved:
-        print(f"Getting saved candidates from SkyPortal from {start_date} to {end_date} for groupIDs {groupIDs} and filterIDs {filterIDs}...")
-    else:
-        print(f"Getting candidates from SkyPortal from {start_date} to {end_date} for groupIDs {groupIDs} and filterIDs {filterIDs}...")
-    if not groupIDs and not filterIDs:
-        return None, "No groupIDs or filterIDs provided"
-    while total is None or len(candidates) < total:
-        params = {
-            "startDate": start_date,
-            "endDate": end_date,
-            "pageNumber": page,
-            "numPerPage": numPerPage
-        }
-        if saved:
-            params["savedStatus"] = "savedToAllSelected"
-        if groupIDs:
-            params["groupIDs"] = groupIDs
-        if filterIDs:
-            params["filterIDs"] = filterIDs
-        if queryID:
-            params["queryID"] = queryID
-        if total:
-            params["totalMatches"] = total
-        response = requests.get(host, headers=headers, params=params)
-        if response.status_code != 200:
-            return None, f"Failed to get candidates from SkyPortal: {response.text}"
-        data = response.json().get("data", {})
-        candidates += [candidate["id"]  for candidate in data.get("candidates", [])]
-        total = data.get("totalMatches", 0)
-        print(f"Got {len(candidates)} candidates at page {page} out of {total/numPerPage:.0f} (queryID: {queryID})")
-        queryID = data.get("queryID", None)
-        page += 1
-    return candidates, None
-
 
 def connect_to_kowalski() -> Kowalski:
     try:
@@ -90,7 +44,7 @@ def candidates_count_from_kowalski(t_i, t_f, programids, objectIds=None) -> (int
     query = {
         "query_type": "count_documents",
         "query": {
-            "catalog": catalog,
+            "catalog": ZTF_ALERTS_CATALOG,
             "filter": {
                 'candidate.jd': {
                     '$gte': t_i,
@@ -143,7 +97,7 @@ def get_candidates_from_kowalski(t_i: float, t_f: float, programids: list, objec
         query = {
             "query_type": "find",
             "query": {
-                "catalog": catalog,
+                "catalog": ZTF_ALERTS_CATALOG,
                 "filter": {
                     'candidate.jd': {
                         '$gte': t_i,
