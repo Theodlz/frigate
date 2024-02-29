@@ -69,3 +69,6 @@ def save_dataframe(df, filename, output_format, output_compression, output_compr
     elif output_format == "csv":
         filename = filename + ".csv"
         df.to_csv(filename, index=False, compression=output_compression)
+
+    # we return the finale filename
+    return filename
