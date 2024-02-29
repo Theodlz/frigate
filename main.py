@@ -1,28 +1,25 @@
 import argparse
+import multiprocessing
 import os
-import time
 
-import arrow
-import corner
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import requests
 from astropy.time import Time
 from penquins import Kowalski
 from tqdm import tqdm
-import multiprocessing
 
 ZTF_ALERTS_CATALOG = "ZTF_alerts"
+
 
 def str_to_bool(value):
     if isinstance(value, bool):
         return value
-    if value.lower() in {'false', 'f', '0', 'no', 'n'}:
+    if value.lower() in {"false", "f", "0", "no", "n"}:
         return False
-    elif value.lower() in {'true', 't', '1', 'yes', 'y'}:
+    elif value.lower() in {"true", "t", "1", "yes", "y"}:
         return True
-    raise ValueError(f'{value} is not a valid boolean value')
+    raise ValueError(f"{value} is not a valid boolean value")
+
 
 def connect_to_kowalski() -> Kowalski:
     try:
@@ -38,6 +35,7 @@ def connect_to_kowalski() -> Kowalski:
     except Exception as e:
         raise ValueError(f"Failed to connect to Kowalski: {e}")
 
+
 def candidates_count_from_kowalski(t_i, t_f, programids, objectIds=None) -> (int, str):
     # run a count query to get the number of candidates we are to expect
     k = connect_to_kowalski()
@@ -46,20 +44,13 @@ def candidates_count_from_kowalski(t_i, t_f, programids, objectIds=None) -> (int
         "query": {
             "catalog": ZTF_ALERTS_CATALOG,
             "filter": {
-                'candidate.jd': {
-                    '$gte': t_i,
-                    '$lt': t_f
-                },
-                'candidate.programid': {
-                    '$in': programids
-                }
-            }
-        }
+                "candidate.jd": {"$gte": t_i, "$lt": t_f},
+                "candidate.programid": {"$in": programids},
+            },
+        },
     }
     if objectIds is not None:
-        query["query"]["filter"]["objectId"] = {
-            '$in': objectIds
-        }
+        query["query"]["filter"]["objectId"] = {"$in": objectIds}
 
     response = k.query(query=query).get("default")
     if response.get("status") != "success":
@@ -79,12 +70,21 @@ def _run_query(query):
         print(f"Failed to connect to Kowalski: {e}")
         exit(1)
 
-def get_candidates_from_kowalski(t_i: float, t_f: float, programids: list, objectIds=None, n_threads=multiprocessing.cpu_count()):
+
+def get_candidates_from_kowalski(
+    t_i: float,
+    t_f: float,
+    programids: list,
+    objectIds=None,
+    n_threads=multiprocessing.cpu_count(),
+):
     total, err = candidates_count_from_kowalski(t_i, t_f, programids, objectIds)
     if err:
         return None, err
 
-    print(f"Expecting {total} candidates between {t_i} and {t_f} for programids {programids} (n_threads: {n_threads})")
+    print(
+        f"Expecting {total} candidates between {t_i} and {t_f} for programids {programids} (n_threads: {n_threads})"
+    )
 
     numPerPage = 10000
     candidates = pd.DataFrame()
@@ -99,33 +99,22 @@ def get_candidates_from_kowalski(t_i: float, t_f: float, programids: list, objec
             "query": {
                 "catalog": ZTF_ALERTS_CATALOG,
                 "filter": {
-                    'candidate.jd': {
-                        '$gte': t_i,
-                        '$lt': t_f
-                    },
-                    'candidate.programid': {
-                        '$in': programids
-                    }
+                    "candidate.jd": {"$gte": t_i, "$lt": t_f},
+                    "candidate.programid": {"$in": programids},
                 },
                 "projection": {
-                    '_id': 0,
-                    'candid': 1,
-                    'objectId': 1,
-                    'candidate': 1,
-                    'classifications': 1
-                }
+                    "_id": 0,
+                    "candid": 1,
+                    "objectId": 1,
+                    "candidate": 1,
+                    "classifications": 1,
+                },
             },
-            "kwargs": {
-                "limit": numPerPage,
-                "skip": i * numPerPage
-            }
+            "kwargs": {"limit": numPerPage, "skip": i * numPerPage},
         }
         if objectIds is not None:
-            query["query"]["filter"]["objectId"] = {
-                '$in': objectIds
-            }
+            query["query"]["filter"]["objectId"] = {"$in": objectIds}
         queries.append(query)
-
 
     with multiprocessing.Pool(processes=n_threads) as pool:
         with tqdm(total=total) as pbar:
@@ -145,41 +134,114 @@ def get_candidates_from_kowalski(t_i: float, t_f: float, programids: list, objec
     print(f"Got a total of {len(candidates)} candidates between {t_i} and {t_f}")
     return candidates, None
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Query Kowalski for stats")
-    parser.add_argument('--programids', type=str, default='1', help='Program IDs to query')
-    parser.add_argument('--start', type=str, default=np.floor(Time.now().jd - 1)+0.5, help='Start time for the query, default to 1 day ago')
-    parser.add_argument('--nb_days', type=float, default=1.0, help='Number of days to query')
-    parser.add_argument('--end', type=str, default=None, help='End time for the query')
-    parser.add_argument('--k_token', type=str, default=None, help='Kowalski token')
-    parser.add_argument('--n_threads', type=str, default=None, help='Number of threads to use when parallelizing queries')
-    parser.add_argument('--output_format', type=str, default='parquet', help='Output format for the results')
-    parser.add_argument('--output_compression', type=str, default=None, help='Output compression for the results')
-    parser.add_argument('--output_compression_level', type=int, default=None, help='Output compression level for the results')
+    parser.add_argument(
+        "--programids", type=str, default="1", help="Program IDs to query"
+    )
+    parser.add_argument(
+        "--start",
+        type=str,
+        default=np.floor(Time.now().jd - 1) + 0.5,
+        help="Start time for the query, default to 1 day ago",
+    )
+    parser.add_argument(
+        "--nb_days", type=float, default=1.0, help="Number of days to query"
+    )
+    parser.add_argument("--end", type=str, default=None, help="End time for the query")
+    parser.add_argument("--k_token", type=str, default=None, help="Kowalski token")
+    parser.add_argument(
+        "--n_threads",
+        type=str,
+        default=None,
+        help="Number of threads to use when parallelizing queries",
+    )
+    parser.add_argument(
+        "--output_format",
+        type=str,
+        default="parquet",
+        help="Output format for the results",
+    )
+    parser.add_argument(
+        "--output_compression",
+        type=str,
+        default=None,
+        help="Output compression for the results",
+    )
+    parser.add_argument(
+        "--output_compression_level",
+        type=int,
+        default=None,
+        help="Output compression level for the results",
+    )
+    parser.add_argument(
+        "--output_directory",
+        type=int,
+        default="./data",
+        help="Output directory for the results",
+    )
     args = parser.parse_args()
 
-    if args.output_format not in ['parquet', 'feather', 'csv']:
-        print(f"Invalid output format: {args.output_format}, must be one of ['parquet', 'feather', 'csv']")
+    if args.output_format not in ["parquet", "feather", "csv"]:
+        print(
+            f"Invalid output format: {args.output_format}, must be one of ['parquet', 'feather', 'csv']"
+        )
 
-    if args.output_format == 'parquet' and args.output_compression not in [None, 'gzip', 'snappy', 'brotli']:
-        print(f"Invalid output compression with parquet: {args.output_compression}, must be one of [None, 'gzip', 'snappy', 'brotli']")
+    if args.output_format == "parquet" and args.output_compression not in [
+        None,
+        "gzip",
+        "snappy",
+        "brotli",
+    ]:
+        print(
+            f"Invalid output compression with parquet: {args.output_compression}, must be one of [None, 'gzip', 'snappy', 'brotli']"
+        )
         exit(1)
-    if args.output_format == 'csv' and args.output_compression not in [None, 'infer', 'gzip', 'bz2', 'zip', 'xz']:
-        print(f"Invalid output compression with csv: {args.output_compression}, must be one of [None, 'infer', 'gzip', 'bz2', 'zip', 'xz']")
+    if args.output_format == "csv" and args.output_compression not in [
+        None,
+        "infer",
+        "gzip",
+        "bz2",
+        "zip",
+        "xz",
+    ]:
+        print(
+            f"Invalid output compression with csv: {args.output_compression}, must be one of [None, 'infer', 'gzip', 'bz2', 'zip', 'xz']"
+        )
         exit(1)
-    if args.output_format == 'feather' and args.output_compression not in [None, 'lz4', 'zstd', 'uncompressed']:
-        print(f"Invalid output compression with feather: {args.output_compression}, must be one of [None, 'lz4', 'zstd', 'uncompressed']")
+    if args.output_format == "feather" and args.output_compression not in [
+        None,
+        "lz4",
+        "zstd",
+        "uncompressed",
+    ]:
+        print(
+            f"Invalid output compression with feather: {args.output_compression}, must be one of [None, 'lz4', 'zstd', 'uncompressed']"
+        )
         exit(1)
 
-    if args.output_compression_level is not None and args.output_format not in ['feather']:
-        print(f"Compression level is only supported with feather, not {args.output_format}. Ignoring")
+    if args.output_compression_level is not None and args.output_format not in [
+        "feather"
+    ]:
+        print(
+            f"Compression level is only supported with feather, not {args.output_format}. Ignoring"
+        )
+
+    output_directory = args.output_directory
+    if not os.path.exists(output_directory):
+        try:
+            os.makedirs(output_directory)
+        except Exception as e:
+            print(f"Failed to create output directory: {e}")
+            exit(1)
 
     if not args.k_token:
         print("No Kowalski token provided")
         exit(1)
 
     # add the token in the environment
-    os.environ['KOWALSKI_TOKEN'] = args.k_token
+    os.environ["KOWALSKI_TOKEN"] = args.k_token
 
     # connect to Kowalski
     try:
@@ -194,7 +256,7 @@ if __name__ == "__main__":
         valid = k.ping()
         if valid is not True:
             raise ValueError("Could not reach the server")
-        del k # we just wanted to test the connection
+        del k  # we just wanted to test the connection
     except Exception as e:
         print(f"Failed to connect to Kowalski: {e}")
         exit(1)
@@ -207,7 +269,7 @@ if __name__ == "__main__":
         n_threads = min(n_threads, multiprocessing.cpu_count())
 
     try:
-        programids = list(map(int, args.programids.split(',')))
+        programids = list(map(int, args.programids.split(",")))
     except ValueError:
         print(f"Invalid programids: {args.programids}")
         exit(1)
@@ -232,13 +294,15 @@ if __name__ == "__main__":
             print(f"Invalid end time: {args.end}")
             exit(1)
     else:
-        t_f = t_i+args.nb_days
+        t_f = t_i + args.nb_days
 
     t_i = float(t_i)
     t_f = float(t_f)
 
     # get candidates from Kowalski
-    candidates, err = get_candidates_from_kowalski(t_i, t_f, programids, n_threads=n_threads)
+    candidates, err = get_candidates_from_kowalski(
+        t_i, t_f, programids, n_threads=n_threads
+    )
 
     # get all the candidates candid from fritz
     # get the data from kowalski
@@ -249,12 +313,20 @@ if __name__ == "__main__":
         exit(1)
     # save the dataframe to disk, with name <start>_<end>_<programids>.extension
     filename = f"{t_i}_{t_f}_{'_'.join(map(str, programids))}"
+    filename = os.path.join(output_directory, filename)
+
     if args.output_format == "parquet":
         filename = filename + ".parquet"
-        candidates.to_parquet(filename, index=False, compression=args.output_compression)
+        candidates.to_parquet(
+            filename, index=False, compression=args.output_compression
+        )
     elif args.output_format == "feather":
         filename = filename + ".feather"
-        candidates.to_feather(filename, compression=args.output_compression, compression_level=args.output_compression_level)
+        candidates.to_feather(
+            filename,
+            compression=args.output_compression,
+            compression_level=args.output_compression_level,
+        )
     elif args.output_format == "csv":
         filename = filename + ".csv"
         candidates.to_csv(filename, index=False, compression=args.output_compression)
