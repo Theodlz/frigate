@@ -4,6 +4,8 @@ requests
 joblib
 penquins
 pandas
+fastparquet
+pyarrow
 numpy
 corner
 astropy
