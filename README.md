@@ -26,3 +26,7 @@ PYTHONPATH=. python scripts/alert-stats.py --feature='candidate.magpsf,candidate
 - [] Looking at the subset of alerts that passed the filters, find the obj_id of the sources that were saved in Fritz.
 - [] Update the dataframe with a column containing the list of filters passed for each alert, and a column containing the groupIDs for each alert which obj has been saved as a source to the groups associated to the filters passed.
 - [] Figure out what visualizations tools and plots we can use to represent the data in a meaningful way and extract insights from it.
+
+#### Troubleshooting
+
+On a system with low memory, you can call frigate with the `--low_memory` flag to reduce memory usage. This will save each subset of alerts to disk, and concatenate them at the end instead of concatenating as the batched queries return. That way we avoid growing the memory of the main process while the individual threads are running. In the future, we want to expand on that mode to reduce the nb of alerts fetched per batch query to reduce the memory usage even more.

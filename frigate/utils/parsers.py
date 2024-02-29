@@ -64,6 +64,12 @@ def main_parser():
         default="./data",
         help="Output directory for the results",
     )
+    parser.add_argument(
+        "--low_memory",
+        type=str_to_bool,
+        default=False,
+        help="Use low memory mode, to reduce RAM usage",
+    )
     return parser
 
 

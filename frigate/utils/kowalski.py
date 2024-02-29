@@ -1,11 +1,17 @@
 import multiprocessing
 import os
+import uuid
+
+from contextlib import closing
+
 
 import numpy as np
 import pandas as pd
 
 from penquins import Kowalski
 from tqdm import tqdm
+
+from frigate.utils.datasets import save_dataframe, load_dataframe, remove_file
 
 ZTF_ALERTS_CATALOG = "ZTF_alerts"
 
@@ -90,13 +96,21 @@ def get_candidates_from_kowalski(
     programids: list,
     objectIds=None,
     n_threads=multiprocessing.cpu_count(),
+    low_memory=False,
+    low_memory_format="parquet",
+    low_memory_dir=None,
 ):
+    if low_memory is True and low_memory_format not in ["parquet", "csv", "feather"]:
+        return None, f"Invalid low_memory_format: {low_memory_format}"
+    if low_memory is True and low_memory_dir is None:
+        return None, "low_memory_dir is required when low_memory is True"
+
     total, err = candidates_count_from_kowalski(t_i, t_f, programids, objectIds)
     if err:
         return None, err
 
     print(
-        f"Expecting {total} candidates between {t_i} and {t_f} for programids {programids} (n_threads: {n_threads})"
+        f"Expecting {total} candidates between {t_i} and {t_f} for programids {programids} (n_threads: {n_threads}, low_memory: {low_memory})"
     )
 
     numPerPage = 10000
@@ -135,7 +149,11 @@ def get_candidates_from_kowalski(
         queries.append(query)
 
     candidates = []  # list of dataframes to concatenate later
-    with multiprocessing.Pool(processes=n_threads) as pool:
+    low_memory_pointers = []  # to use with low_memory=True
+
+    # contextlib.closing should help close opened files or other things
+    # it's just added security, it might not be necessary but could be in the future
+    with closing(multiprocessing.Pool(processes=n_threads)) as pool:
         with tqdm(total=total) as pbar:
             for response in pool.imap_unordered(_run_query, queries):
                 if not isinstance(response, dict):
@@ -148,12 +166,38 @@ def get_candidates_from_kowalski(
                 # we want to remove unnecessary chars from string fields to save space
                 data = shorten_string_fields(data)
 
-                # append to list of dataframes
-                candidates.append(data)
+                if low_memory:
+                    # if running in low memory mode, we directly store the partial dataframe
+                    # and concatenate them later
+                    # so we generate a random filename
+                    filename = f"tmp_{uuid.uuid4()}.{low_memory_format}"
+                    save_dataframe(
+                        df=data,
+                        filename=filename,
+                        output_format=low_memory_format,
+                        output_directory=low_memory_dir,
+                        output_compression=None,
+                        output_compression_level=None,
+                    )
+                    low_memory_pointers.append(filename)
+                else:
+                    # append to list of dataframes
+                    candidates.append(data)
                 pbar.update(len(data))
+                del data
 
     # concatenate all dataframes
+    if low_memory:
+        candidates = []
+        for filename in low_memory_pointers:
+            data = load_dataframe(
+                filename, format=low_memory_format, directory=low_memory_dir
+            )
+            candidates.append(data)
+            remove_file(filename, directory=low_memory_dir)
+
     candidates = pd.concat(candidates, ignore_index=True)
+
     # sort by jd from oldest to newest (lowest to highest)
     candidates = candidates.sort_values(by="candidate.jd", ascending=True)
 
