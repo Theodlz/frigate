@@ -72,3 +72,34 @@ def save_dataframe(df, filename, output_format, output_compression, output_compr
 
     # return the filename that includes the output dir and the extension
     return filename
+def load_dataframe(filename, format=None, directory=None):
+    if directory is not None and not filename.startswith(directory):
+        filename = os.path.join(directory, filename)
+
+
+    if format is None:
+        # try to infer the output format from the filename
+        if filename.endswith(".parquet"):
+            format = "parquet"
+        elif filename.endswith(".feather"):
+            format = "feather"
+        elif filename.endswith(".csv"):
+            format = "csv"
+        else:
+            raise ValueError(f"Could not infer output format from filename: {filename}")
+    if format == "parquet":
+        return pd.read_parquet(filename)
+    elif format == "feather":
+        return pd.read_feather(filename)
+    elif format == "csv":
+        return pd.read_csv(filename)
+    else:
+        raise ValueError(f"Invalid output format: {format}, must be one of ['parquet', 'feather', 'csv']")
+
+def remove_file(filename, directory=None):
+    if directory is not None and not filename.startswith(directory):
+        filename = os.path.join(directory, filename)
+    try:
+        os.remove(filename)
+    except Exception as e:
+        raise ValueError(f"Failed to remove file: {e}")

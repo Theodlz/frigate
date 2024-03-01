@@ -19,7 +19,13 @@ if __name__ == "__main__":
 
     # GET CANDIDATES FROM KOWALSKI
     candidates, err = get_candidates_from_kowalski(
-        args.start, args.end, args.programids, n_threads=args.n_threads
+        args.start,
+        args.end,
+        args.programids,
+        n_threads=args.n_threads,
+        low_memory=args.low_memory,
+        low_memory_format=args.output_format,
+        low_memory_dir=args.output_directory,
     )
     if err:
         print(err)
