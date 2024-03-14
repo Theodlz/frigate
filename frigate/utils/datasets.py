@@ -76,7 +76,6 @@ def load_dataframe(filename, format=None, directory=None):
     if directory is not None and not filename.startswith(directory):
         filename = os.path.join(directory, filename)
 
-
     if format is None:
         # try to infer the output format from the filename
         if filename.endswith(".parquet"):
@@ -103,3 +102,8 @@ def remove_file(filename, directory=None):
         os.remove(filename)
     except Exception as e:
         raise ValueError(f"Failed to remove file: {e}")
+
+def compute_column_stats(df: pd.DataFrame, column: str) -> dict:
+    # compute the statistics
+    stats = df[column].describe().to_dict()
+    return stats

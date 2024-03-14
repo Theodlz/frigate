@@ -99,6 +99,7 @@ def get_candidates_from_kowalski(
     low_memory=False,
     low_memory_format="parquet",
     low_memory_dir=None,
+    format="parquet",
 ):
     if low_memory is True and low_memory_format not in ["parquet", "csv", "feather"]:
         return None, f"Invalid low_memory_format: {low_memory_format}"
@@ -112,6 +113,19 @@ def get_candidates_from_kowalski(
     print(
         f"Expecting {total} candidates between {t_i} and {t_f} for programids {programids} (n_threads: {n_threads}, low_memory: {low_memory})"
     )
+
+    filename = f"{t_i}_{t_f}_{'_'.join(map(str, programids))}.{format}"
+    # look in the low memory dir (which is identical to the dir), if the file exists
+    # if it does, load it and verify that it has the expected number of candidates
+    try:
+        existing_data = load_dataframe(filename, None, low_memory_dir)
+        if existing_data is not None and len(existing_data) == total:
+            print(
+                f"Found existing data for {filename} with {total} candidates, skipping query"
+            )
+            return existing_data, None
+    except Exception as e:
+        print(f"Failed to load existing data for {filename}: {e}, continuing")
 
     numPerPage = 10000
     batches = int(np.ceil(total / numPerPage))
@@ -184,7 +198,7 @@ def get_candidates_from_kowalski(
                     # append to list of dataframes
                     candidates.append(data)
                 pbar.update(len(data))
-                del data
+                del data, response
 
     # concatenate all dataframes
     if low_memory:

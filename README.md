@@ -6,7 +6,7 @@ The current `frigate/__main__.py` only addresses step 1 (getting the full set of
 You can run frigate with:
 
 ```bash
-PYTHONPATH=. python frigate --k_token=<your_token>
+PYTHONPATH=. python frigate
 ```
 
 To get the list of all possible arguments, you can run:
