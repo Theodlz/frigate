@@ -13,12 +13,9 @@ def get_skyportal_token():
         raise ValueError(f"Failed to get SkyPortal token: {e}")
 
 
-def get_candids_per_filter_from_skyportal(
-    t_i, t_f, groupIDs, filterIDs, saved=False, token=None
-):
-    token = get_skyportal_token() if token is None else token
+def get_candids_per_filter_from_skyportal(t_i, t_f, groupIDs, filterIDs, saved=False):
     host = "https://fritz.science/api/candidates_filter"
-    headers = {"Authorization": f"token {token}"}
+    headers = {"Authorization": f"token {get_skyportal_token()}"}
     # compute the isoformat of the start and end dates
     start_date = Time(t_i, format="jd").iso
     end_date = Time(t_f, format="jd").iso

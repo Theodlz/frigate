@@ -39,12 +39,7 @@ if __name__ == "__main__":
     print("Getting candidates from SkyPortal using the following groupIDs:")
     print(args.groupids)
     candids_per_filter, err = get_candids_per_filter_from_skyportal(
-        args.start,
-        args.end,
-        args.groupids,
-        args.filterids,
-        saved=False,
-        token=args.sp_token,
+        args.start, args.end, args.groupids, args.filterids, saved=False
     )
     if err or candids_per_filter is None:
         print(err)

@@ -92,6 +92,15 @@ def main_parser_args():
         # if provided, we add the token in the environment instead
         os.environ["KOWALSKI_TOKEN"] = args.k_token
 
+    if not args.sp_token:
+        # we try to get the token from the environment if it is not provided here
+        sp_token_env = os.environ.get("SKYPORTAL_TOKEN")
+        if sp_token_env:
+            args.sp_token = sp_token_env
+    else:
+        # if provided, we add the token in the environment instead
+        os.environ["SKYPORTAL_TOKEN"] = args.sp_token
+
     # validate the output options
     try:
         validate_output_options(
