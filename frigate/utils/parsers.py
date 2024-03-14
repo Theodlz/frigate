@@ -33,6 +33,13 @@ def main_parser():
         "--nb_days", type=float, default=1.0, help="Number of days to query"
     )
     parser.add_argument("--end", type=str, default=None, help="End time for the query")
+    parser.add_argument(
+        "--groupids", type=str, default="*", help="SkyPortal Group IDs to query"
+    )
+    parser.add_argument(
+        "--filterids", type=str, help="SkyPortal/Kowalski Filter IDs to query"
+    )
+    parser.add_argument("--sp_token", type=str, default=None, help="Skyportal token")
     parser.add_argument("--k_token", type=str, default=None, help="Kowalski token")
     parser.add_argument(
         "--n_threads",
@@ -85,6 +92,15 @@ def main_parser_args():
         # if provided, we add the token in the environment instead
         os.environ["KOWALSKI_TOKEN"] = args.k_token
 
+    if not args.sp_token:
+        # we try to get the token from the environment if it is not provided here
+        sp_token_env = os.environ.get("SKYPORTAL_TOKEN")
+        if sp_token_env:
+            args.sp_token = sp_token_env
+    else:
+        # if provided, we add the token in the environment instead
+        os.environ["SKYPORTAL_TOKEN"] = args.sp_token
+
     # validate the output options
     try:
         validate_output_options(
@@ -120,8 +136,7 @@ def main_parser_args():
         except ValueError:
             t_i = Time(args.start).jd
     except ValueError:
-        print(f"Invalid start time: {args.start}")
-        exit(1)
+        raise ValueError(f"Invalid start time: {args.start}")
     if args.end:
         try:
             try:
@@ -129,12 +144,68 @@ def main_parser_args():
             except ValueError:
                 t_f = Time(args.end).jd
         except ValueError:
-            print(f"Invalid end time: {args.end}")
-            exit(1)
+            raise ValueError(f"Invalid end time: {args.end}")
     else:
         t_f = t_i + args.nb_days
 
+    # validate the groupids
+    if args.groupids:
+        if args.groupids[0] not in ["*", "all"]:
+            try:
+                groupids = list(map(int, args.groupids.split(",")))
+            except ValueError:
+                raise ValueError(f"Invalid groupids: {args.groupids}")
+            args.groupids = groupids
+            if args.groupids in [[], None, ""]:
+                args.groupids = []
+
+    # validate the filterids
+    if args.filterids:
+        try:
+            filterids = list(map(int, args.filterids.split(",")))
+        except ValueError:
+            raise ValueError(f"Invalid filterids: {args.filterids}")
+        args.filterids = filterids
+        if args.filterids in [[], None, ""]:
+            args.filterids = []
+
     args.start = float(t_i)
     args.end = float(t_f)
+
+    return args
+
+
+def stats_parser():
+    # takes a path to a dataset and a list of columns to compute stats on
+    parser = argparse.ArgumentParser(description="Compute stats on a dataset")
+    parser.add_argument(
+        "--dataset_path", type=str, help="Path to the dataset to compute stats on"
+    )
+    parser.add_argument(
+        "--columns", type=str, help="Columns to compute stats on, comma separated"
+    )
+
+    return parser
+
+
+def stats_parser_args():
+    args = stats_parser().parse_args()
+
+    # validate the dataset path
+    if not os.path.exists(args.dataset_path):
+        raise ValueError(f"Invalid dataset path: {args.dataset_path}")
+
+    # validate the columns
+    if args.columns:
+        try:
+            columns = list(map(str, args.columns.split(",")))
+        except ValueError:
+            raise ValueError(f"Invalid columns: {args.columns}")
+        args.columns = columns
+        if args.columns in [[], None, ""]:
+            args.columns = []
+
+    if len(args.columns) == 0:
+        raise ValueError("No columns provided")
 
     return args
