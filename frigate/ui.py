@@ -66,14 +66,14 @@ def main():
     root = tk.Tk()
     root.title("Dropdowns and Plots")
 
-    options = ['Option 1', 'Option 2', 'Option 3']
-    dropdown1_label = ttk.Label(root, text="Dropdown 1:")
+    options = ['Filter 1', 'Filter 2', 'Filter 3']
+    dropdown1_label = ttk.Label(root, text="List of Filters 1:")
     dropdown1_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
     dropdown1 = ttk.Combobox(root, values=options)
     dropdown1.grid(row=0, column=1, padx=5, pady=5)
     dropdown1.current(0)
 
-    dropdown2_label = ttk.Label(root, text="Dropdown 2:")
+    dropdown2_label = ttk.Label(root, text="List of Filter 2:")
     dropdown2_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
     dropdown2 = ttk.Combobox(root, values=options)
     dropdown2.grid(row=1, column=1, padx=5, pady=5)
