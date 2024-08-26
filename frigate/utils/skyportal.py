@@ -11,7 +11,7 @@ def get_skyportal_token():
         return token
     except Exception as e:
         raise ValueError(f"Failed to get SkyPortal token: {e}")
-
+    
 
 def get_candids_per_filter_from_skyportal(t_i, t_f, groupIDs, filterIDs, saved=False):
     host = "https://fritz.science/api/candidates_filter"
@@ -49,9 +49,14 @@ def get_candids_per_filter_from_skyportal(t_i, t_f, groupIDs, filterIDs, saved=F
             params["filterIDs"] = filterIDs
         if total:
             params["totalMatches"] = total
+        
+        print(f"host: {host}")
+        print(f"headers: {headers}")
+        print(f"pararams: {params}")
+
         response = requests.get(host, headers=headers, params=params)
         if response.status_code != 200:
-            return None, f"Failed to get candidates from SkyPortal: {response.text}"
+            return None, f"Failed to get candidates from SkyPortal (in skyportal.py): {response.text}"
         data = response.json().get("data", {})
         for candidate in data.get("candidates", []):
             # each candidate has a filter_id and a passing_alert_id which is the candid

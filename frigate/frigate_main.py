@@ -14,10 +14,7 @@ def str_to_bool(value):
     raise ValueError(f"{value} is not a valid boolean value")
 
 
-if __name__ == "__main__":
-    # PARSE COMMAND LINE ARGUMENTS
-    args = main_parser_args()
-
+def process_candidates(args):
     # GET CANDIDATES FROM KOWALSKI
     candidates, err = get_candidates_from_kowalski(
         args.start,
@@ -31,7 +28,7 @@ if __name__ == "__main__":
     )
     if err or candidates is None:
         print(err)
-        exit(1)
+        return
 
     # GET CANDIDATES FROM SKYPORTAL
     print("Getting candidates from SkyPortal using the following filters:")
@@ -43,20 +40,13 @@ if __name__ == "__main__":
     )
     if err or candids_per_filter is None:
         print(err)
-        exit(1)
-
-    # candids_per_filter is a dictionary with keys being filterIDs and values being the corresponding candidates
-    # candid value, that we find in the candidates dataframe.
-    # add a "passed_filters" column to the candidates dataframe, which is a list of filterIDs that the candidate passed
-    # through.
+        return
 
     # ADD PASSED FILTERS TO CANDIDATES
     candidates["passed_filters"] = [[] for _ in range(len(candidates))]
     for filterID, candids in candids_per_filter.items():
         try:
-            # find the index of the row that has this candid in the candidates dataframe
             idx = candidates[candidates["candid"].isin(candids)].index
-            # add the filterID to the "passed_filters" column of the candidates dataframe
             candidates.loc[idx, "passed_filters"] = candidates.loc[
                 idx, "passed_filters"
             ].apply(lambda x: x + [filterID])
@@ -65,7 +55,6 @@ if __name__ == "__main__":
             continue
 
     # SAVE CANDIDATES TO DISK
-    # filename: <start>_<end>_<programids>.<output_format> (ext added by save_dataframe function)
     filename = f"{args.start}_{args.end}_{'_'.join(map(str, args.programids))}"
     filepath = save_dataframe(
         df=candidates,
@@ -77,3 +66,12 @@ if __name__ == "__main__":
     )
 
     print(f"Saved candidates to {filepath}")
+
+
+def main():
+    args = main_parser_args()
+    process_candidates(args)
+
+
+if __name__ == "__main__":
+    main()
