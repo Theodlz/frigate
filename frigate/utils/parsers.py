@@ -210,16 +210,34 @@ def stats_parser_args():
 
     return args
 
+
 def loop_parser():
-    parser = argparse.ArgumentParser(description='Run frigate with specified parameters.')
-    parser.add_argument("--programids", type=str, default="1,2,3", help="Program IDs to query")
-    parser.add_argument('--start', nargs='+', required=True, help='List of start values')
-    parser.add_argument("--nb_days", type=float, default=1.0, help="Number of days to query")
+    parser = argparse.ArgumentParser(
+        description="Run frigate with specified parameters."
+    )
+    parser.add_argument(
+        "--programids", type=str, default="1,2,3", help="Program IDs to query"
+    )
+    parser.add_argument(
+        "--start", nargs="+", required=True, help="List of start values"
+    )
+    parser.add_argument(
+        "--nb_days", type=float, default=1.0, help="Number of days to query"
+    )
     parser.add_argument("--sp_token", type=str, default=None, help="Skyportal token")
     parser.add_argument("--k_token", type=str, default=None, help="Kowalski token")
-    parser.add_argument("--groupids", type=str, default="*", help="SkyPortal Group IDs to query")
-    parser.add_argument("--filterids", type=str, help="SkyPortal/Kowalski Filter IDs to query")
-    parser.add_argument("--output_format", type=str, default="parquet", help="Output format for the results")
+    parser.add_argument(
+        "--groupids", type=str, default="*", help="SkyPortal Group IDs to query"
+    )
+    parser.add_argument(
+        "--filterids", type=str, help="SkyPortal/Kowalski Filter IDs to query"
+    )
+    parser.add_argument(
+        "--output_format",
+        type=str,
+        default="parquet",
+        help="Output format for the results",
+    )
     parser.add_argument(
         "--n_threads",
         type=str,
@@ -254,7 +272,7 @@ def loop_parser():
 
 
 def loop_parser_args():
-    args = loop_parser().parse_args()   
+    args = loop_parser().parse_args()
     if not args.k_token:
         # we try to get the token from the environment if it is not provided here
         k_token_env = os.environ.get("KOWALSKI_TOKEN")
