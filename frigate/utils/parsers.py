@@ -209,3 +209,116 @@ def stats_parser_args():
         raise ValueError("No columns provided")
 
     return args
+
+def loop_parser():
+    parser = argparse.ArgumentParser(description='Run frigate with specified parameters.')
+    parser.add_argument("--programids", type=str, default="1,2,3", help="Program IDs to query")
+    parser.add_argument('--start', nargs='+', required=True, help='List of start values')
+    parser.add_argument("--nb_days", type=float, default=1.0, help="Number of days to query")
+    parser.add_argument("--sp_token", type=str, default=None, help="Skyportal token")
+    parser.add_argument("--k_token", type=str, default=None, help="Kowalski token")
+    parser.add_argument("--groupids", type=str, default="*", help="SkyPortal Group IDs to query")
+    parser.add_argument("--filterids", type=str, help="SkyPortal/Kowalski Filter IDs to query")
+    parser.add_argument("--output_format", type=str, default="parquet", help="Output format for the results")
+    parser.add_argument(
+        "--n_threads",
+        type=str,
+        default=None,
+        help="Number of threads to use when parallelizing queries",
+    )
+    parser.add_argument(
+        "--output_compression",
+        type=str,
+        default=None,
+        help="Output compression for the results",
+    )
+    parser.add_argument(
+        "--output_compression_level",
+        type=int,
+        default=None,
+        help="Output compression level for the results",
+    )
+    parser.add_argument(
+        "--output_directory",
+        type=str,
+        default="./data",
+        help="Output directory for the results",
+    )
+    parser.add_argument(
+        "--low_memory",
+        type=str_to_bool,
+        default=False,
+        help="Use low memory mode, to reduce RAM usage",
+    )
+    return parser
+
+
+def loop_parser_args():
+    args = loop_parser().parse_args()   
+    if not args.k_token:
+        # we try to get the token from the environment if it is not provided here
+        k_token_env = os.environ.get("KOWALSKI_TOKEN")
+        if k_token_env:
+            args.k_token = k_token_env
+    else:
+        # if provided, we add the token in the environment instead
+        os.environ["KOWALSKI_TOKEN"] = args.k_token
+
+    if not args.sp_token:
+        # we try to get the token from the environment if it is not provided here
+        sp_token_env = os.environ.get("SKYPORTAL_TOKEN")
+        if sp_token_env:
+            args.sp_token = sp_token_env
+    else:
+        # if provided, we add the token in the environment instead
+        os.environ["SKYPORTAL_TOKEN"] = args.sp_token
+
+    # validate the output options
+    try:
+        validate_output_options(
+            args.output_format,
+            args.output_compression,
+            args.output_compression_level,
+            args.output_directory,
+        )
+    except ValueError as e:
+        raise ValueError(f"Invalid output options: {e}")
+
+    # validate the number of threads
+    n_threads = args.n_threads
+    if n_threads is None:
+        n_threads = multiprocessing.cpu_count()
+    else:
+        n_threads = int(n_threads)
+        n_threads = min(n_threads, multiprocessing.cpu_count())
+    args.n_threads = n_threads
+
+    # validate the programids
+    try:
+        programids = list(map(int, args.programids.split(",")))
+    except ValueError:
+        raise ValueError(f"Invalid programids: {args.programids}")
+    args.programids = programids
+
+    # validate the groupids
+    if args.groupids:
+        if args.groupids[0] not in ["*", "all"]:
+            try:
+                groupids = list(map(int, args.groupids.split(",")))
+            except ValueError:
+                raise ValueError(f"Invalid groupids: {args.groupids}")
+            args.groupids = groupids
+            if args.groupids in [[], None, ""]:
+                args.groupids = []
+
+    # validate the filterids
+    if args.filterids:
+        try:
+            filterids = list(map(int, args.filterids.split(",")))
+        except ValueError:
+            raise ValueError(f"Invalid filterids: {args.filterids}")
+        args.filterids = filterids
+        if args.filterids in [[], None, ""]:
+            args.filterids = []
+
+    return args
