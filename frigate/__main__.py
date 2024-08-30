@@ -14,10 +14,7 @@ def str_to_bool(value):
     raise ValueError(f"{value} is not a valid boolean value")
 
 
-if __name__ == "__main__":
-    # PARSE COMMAND LINE ARGUMENTS
-    args = main_parser_args()
-
+def process_candidates(args):
     # GET CANDIDATES FROM KOWALSKI
     candidates, err = get_candidates_from_kowalski(
         args.start,
@@ -77,3 +74,10 @@ if __name__ == "__main__":
     )
 
     print(f"Saved candidates to {filepath}")
+
+
+# PARSE COMMAND LINE ARGUMENTS
+args = main_parser_args()
+
+if __name__ == "__main__":
+    process_candidates(args)

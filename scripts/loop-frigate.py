@@ -1,8 +1,8 @@
-from frigate.utils.parsers import loop_parser_args
-from frigate.utils.frigatemain import process_candidates
+from frigate.__main__ import process_candidates
+from frigate.utils.parsers import main_parser_args
 
-args = loop_parser_args()
-start_values = args.start
+args = main_parser_args()
+start_values = [args.start]
 
 for start in start_values:
     try:
