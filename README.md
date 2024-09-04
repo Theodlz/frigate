@@ -21,8 +21,8 @@ To run the deprecated `scripts/alert-stats.py` script, you can run:
 PYTHONPATH=. python scripts/alert-stats.py --feature='candidate.magpsf,candidate.sigmapsf' --programids=1,2 --plot=True --start=2460355.5 --nb_days=1 --sp_token=<your_sp_token> --sp_groupIDs=41 --sp_filterIDs=1 --nb_bins=1000 --k_token=<your_kowalski_token>
 ```
 
-- [X] Fetch all the features of all alert packets within a given time range with given program ids and store it as a pandas dataframe
-- [X] Fetch all of the candidates that passed filters in Fritz (with exact candid, not just objectIds). Relies on the new /api/candidates_filter endpoint.
+- [x] Fetch all the features of all alert packets within a given time range with given program ids and store it as a pandas dataframe
+- [x] Fetch all of the candidates that passed filters in Fritz (with exact candid, not just objectIds). Relies on the new /api/candidates_filter endpoint.
 - [ ] Looking at the subset of alerts that passed the filters, find the obj_id of the sources that were saved in Fritz.
 - [ ] Update the dataframe with a column containing the list of filters passed for each alert, and a column containing the groupIDs for each alert which obj has been saved as a source to the groups associated to the filters passed.
 - [ ] Figure out what visualizations tools and plots we can use to represent the data in a meaningful way and extract insights from it.

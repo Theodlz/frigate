@@ -25,9 +25,10 @@ def main_parser():
     )
     parser.add_argument(
         "--start",
+        nargs="+",
         type=str,
         default=np.floor(Time.now().jd - 1) + 0.5,
-        help="Start time for the query, default to 1 day ago",
+        help="Start time(s) for the query, default to 1 day ago",
     )
     parser.add_argument(
         "--nb_days", type=float, default=1.0, help="Number of days to query"
@@ -129,14 +130,17 @@ def main_parser_args():
     args.programids = programids
 
     # validate the start and end times
-    try:
-        # check if start is a string or a float as string
+    t_i = []
+    for start in args.start:
         try:
-            t_i = float(args.start)
+            # check if start is a string or a float as string
+            try:
+                t_i.append(float(start))
+            except ValueError:
+                t_i.append(Time(start).jd)
         except ValueError:
-            t_i = Time(args.start).jd
-    except ValueError:
-        raise ValueError(f"Invalid start time: {args.start}")
+            raise ValueError(f"Invalid start time: {start}")
+
     if args.end:
         try:
             try:
@@ -146,7 +150,7 @@ def main_parser_args():
         except ValueError:
             raise ValueError(f"Invalid end time: {args.end}")
     else:
-        t_f = t_i + args.nb_days
+        t_f = [ti + args.nb_days for ti in t_i]
 
     # validate the groupids
     if args.groupids:
@@ -169,8 +173,12 @@ def main_parser_args():
         if args.filterids in [[], None, ""]:
             args.filterids = []
 
-    args.start = float(t_i)
-    args.end = float(t_f)
+    if len(t_i) == 1:
+        args.start = float(t_i[0])
+        args.end = float(t_f[0])
+    else:
+        args.start = t_i
+        args.end = t_f
 
     return args
 
