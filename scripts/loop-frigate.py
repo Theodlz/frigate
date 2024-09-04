@@ -2,7 +2,9 @@ from frigate.__main__ import process_candidates
 from frigate.utils.parsers import main_parser_args
 
 args = main_parser_args()
-start_values = [args.start]
+start_values = args.start
+if isinstance(start_values, (int, str, float)):
+    start_values = [start_values]
 
 for start in start_values:
     try:
