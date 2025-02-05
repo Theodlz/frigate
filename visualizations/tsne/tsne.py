@@ -6,6 +6,7 @@ import astropy.units as u
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
+from datetime import datetime
 
 
 def load_data(path):
@@ -231,7 +232,11 @@ class tSNE:
         )
         tsne_results = tsne.fit_transform(self.pca_result)
         if self.save_path:
-            with open(self.save_path, "wb") as f:
+            if self.save_path == "default":
+                time = datetime.now()
+                tsne_save_path = f"../example_data/tsne_results_{time}.pkl"
+            else:
+                tsne_save_path = self.save_path
+            with open(tsne_save_path, "wb") as f:
                 pickle.dump(tsne_results, f)
         return tsne_results
-

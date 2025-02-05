@@ -33,7 +33,7 @@ def add_class_to_df(df, column_name, object_id, class_value):
     """
     add classification to the dataframe
     """
-    df[column_name] = ""
+    df[column_name] = None
     df.loc[df["objectId"] == object_id, column_name] = class_value
 
 
@@ -279,4 +279,3 @@ class FilterClassifications:
             )
 
         return filter_class, df
-

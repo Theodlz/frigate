@@ -37,16 +37,42 @@ class TsnePlotter_featurecolor:
         self.df = df
 
     def plot_parameter_analysis(
-        self, parameter, reorder=True, ascending=False, remove_error_values=True
+        self,
+        parameter,
+        reorder=True,
+        ascending=False,
+        remove_error_values=True,
+        use_colorbar=True,
     ):
         df = self.df.copy()
 
-        # reorder so highest parameter value plots on top
-        if reorder:
-            df = df.sort_values(by=parameter, ascending=ascending)
-
         if remove_error_values:
             df = df[df[parameter] > -600]
+
+        if use_colorbar:
+            if reorder:
+                df = df.sort_values(by=parameter, ascending=ascending)
+            assign_legend = False
+            assign_palette = "viridis"
+
+        else:
+            if reorder:
+                plot_top = df[df[parameter].notna()]
+                plot_under = df[df[parameter].isna()]
+                df = pd.concat([plot_under, plot_top])
+            df[parameter] = df[parameter].fillna("None")
+            assign_legend = "full"
+            assign_palette = [
+                "#d8dcd6",
+                "#FF5733",
+                "#33FF57",
+                "#3357FF",
+                "#FF5733",
+                "#FF33F6",
+                "#FF5733",
+                "#FF5733",
+                "#33FFF6",
+            ]
 
         plt.figure(figsize=(16, 10))
         ax = plt.gca()  # Get the current axes
@@ -54,18 +80,21 @@ class TsnePlotter_featurecolor:
             x="tsne-2d-one",
             y="tsne-2d-two",
             hue=parameter,
-            palette="viridis",
+            palette=assign_palette,
             data=df,
-            legend=False,
+            legend=assign_legend,
             alpha=0.7,
             ax=ax,
         )
-        # Add a colorbar
-        norm = plt.Normalize(df[parameter].min(), df[parameter].max())
-        sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
-        sm.set_array([])
-        cbar = plt.colorbar(sm, ax=ax)
-        cbar.set_label(f"{parameter}", fontsize=18)
+        if use_colorbar:
+            # Add a colorbar
+            norm = plt.Normalize(df[parameter].min(), df[parameter].max())
+            sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+            sm.set_array([])
+            cbar = plt.colorbar(sm, ax=ax)
+            cbar.set_label(f"{parameter}", fontsize=18)
+        else:
+            plt.legend(title=parameter, title_fontsize="18", fontsize="15")
 
         plt.xlabel("t-SNE Dimension 1", fontsize=18)
         plt.ylabel("t-SNE Dimension 2", fontsize=18)
@@ -108,4 +137,3 @@ class TsnePlotter_density:
         plt.ylabel("t-SNE Dimension 2", fontsize=18)
         plt.title("t-SNE Plot from ZTF Example Night", fontsize=25)
         plt.show()
-
