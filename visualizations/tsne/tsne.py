@@ -111,8 +111,6 @@ def edit_columns(df, remove_instrumental=True):
         "classifications.bts_version",
         "candidate.jdstarthist",
         "candidate.jdendhist",
-        "candidate.ra",
-        "candidate.dec",
         "classifications.acai_h",
         "classifications.acai_v",
         "classifications.acai_o",
@@ -175,6 +173,8 @@ class tSNEDataPreprocessor:
                 "acai",
                 "catnorth",
                 "gaia",
+                "ra",
+                "dec",
             ],
             errors="ignore",
         )

@@ -7,6 +7,11 @@ from astropy.time import Time
 from astroquery.simbad import Simbad
 from astropy.coordinates import SkyCoord
 import astropy.units as u
+import matplotlib.pyplot as plt
+
+import warnings
+
+warnings.filterwarnings("ignore", category=UserWarning, module="astroquery.simbad")
 
 
 class MyException(Exception):
@@ -82,8 +87,23 @@ class FritzNightClassifications:
 
 
 class SimbadClassifications:
-    def __init__(self):
-        pass
+    def __init__(
+        self,
+        df,
+        save_query_path=False,
+        add_to_df=True,
+        filtered_only=True,
+        verbose=False,
+        display_results=True,
+    ):
+        self.df = df
+        self.save_query_path = save_query_path
+        self.add_to_df = add_to_df
+        self.filtered_only = filtered_only
+        self.verbose = verbose
+        self.display_results = display_results
+
+        warnings.filterwarnings("ignore")
 
     @staticmethod
     def query_simbad(coord):
@@ -97,9 +117,26 @@ class SimbadClassifications:
         result = custom_simbad.query_region(coord, radius="0d0m3s")
         return result
 
-    def get_simbad_classifications(self, df, save_query_path, add_to_df=True):
-        df = get_filtered_subset(df)  # this query is slow
-        coords = [(x, y) for x, y in zip(df["candidate.ra"], df["candidate.dec"])]
+    @staticmethod
+    def plot_query_results(results):
+        """
+        display the objects that were found in the query
+        """
+        filtered_simbad = [x[2:-2] for x in results if (x and len(x) > 0)]
+        bins = len(set(filtered_simbad))
+        plt.figure(figsize=(15, 6))
+        plt.hist(filtered_simbad, bins=bins, edgecolor="black")
+        plt.title("Histogram of Simbad Classifications", fontsize=18)
+        plt.xlabel("Simbad Classifications", fontsize=14)
+        plt.ylabel("Frequency", fontsize=14)
+        plt.xticks(rotation=45, fontsize=12, ha="right")
+        plt.grid(False)
+        plt.show()
+
+    def get_classifications(self):
+        if self.filtered_only:
+            self.df = get_filtered_subset(self.df)  # do this bc query is slow
+        coords = [(x, y) for x, y in zip(self.df["ra"], self.df["dec"])]
         sky_coords = [
             SkyCoord(ra=ra * u.degree, dec=dec * u.degree, frame="icrs")
             for ra, dec in coords
@@ -110,24 +147,33 @@ class SimbadClassifications:
                 result = self.query_simbad(coord)
                 value = str(list(result["OTYPE_V"].data))
             except ConnectionError as e:
-                print(f"Connection error querying SIMBAD for {coord}: {e}")
+                if self.verbose:
+                    print(f"Connection error querying SIMBAD for {coord}: {e}")
                 value = None
             except Exception as e:
-                print(f"Error querying SIMBAD for {coord}: {e}")
+                if self.verbose:
+                    print(f"Error querying SIMBAD for {coord}: {e}")
                 value = None
             simbad_results.append(value)
-        obj_ids = df["objectId"].values
-        if save_query_path:
+        obj_ids = self.df["objectId"].values
+        if self.save_query_path:
             simbad_dict = {
                 object_id: result for object_id, result in zip(obj_ids, simbad_results)
             }
-            with open(save_query_path, "wb") as f:
+            with open(self.save_query_path, "wb") as f:
                 pickle.dump(simbad_dict, f)
 
-        if add_to_df:
-            add_class_to_df(df, "simbad_classification", obj_ids, simbad_results)
+        if self.add_to_df:
+            add_class_to_df(self.df, "simbad_classification", obj_ids, simbad_results)
 
-        return simbad_results, df
+        if self.display_results:
+            matches = [x for x in simbad_results if x]
+            print(
+                f"{len(matches)} / {len(self.df)} alerts matched a SIMBAD classification"
+            )
+            self.plot_query_results(simbad_results)
+
+        return simbad_results, self.df
 
 
 # Kowalski for catalog classifications
