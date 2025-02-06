@@ -1,4 +1,4 @@
 cache/
 __pycache__/
-visualizations/example_data/
+visualizations/private_data/
 credentials.yaml
