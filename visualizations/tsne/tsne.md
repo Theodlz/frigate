@@ -1,10 +1,10 @@
-### t-SNE for ZTF Alerts
+# t-SNE for ZTF Alerts
 
 This directory contains code to use t-SNE to visualize ZTF alerts.
 
 We use the [scikit-learn implementation of t-SNE](https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html), and you can read more about some of the optional arguments there.
 
-# contents
+### contents
 
 `tsne_example.ipynb`
 This is a good starting place for t-SNE, walking through the implementation.
@@ -17,6 +17,8 @@ This contains functions to query various sources to get additional classificatio
 
 `plots_tsne.py`
 This contains functions to plot the t-SNE results in various ways.
+
+### run t-SNE
 
 You can run t-SNE directly with default settings:
 
