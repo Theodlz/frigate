@@ -249,4 +249,3 @@ class PairPlotter:
             text.set_fontsize(18)
 
         plt.show()
-
