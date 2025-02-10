@@ -58,7 +58,8 @@ def process_candidates(args):
             continue
 
     # for each source that passed at least one filter, get metadata from SkyPortal
-    print("Getting source metadata from SkyPortal...")
+    if args.verbose:
+        print("Getting source metadata from SkyPortal...")
     object_ids = candidates[candidates["passed_filters"].apply(len) > 0]["objectId"].unique()
     source_metadata, err = get_source_metadata_from_skyportal(object_ids)
     if err or source_metadata is None:
