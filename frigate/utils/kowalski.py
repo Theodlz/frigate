@@ -100,6 +100,7 @@ def get_candidates_from_kowalski(
     low_memory_format="parquet",
     low_memory_dir=None,
     format="parquet",
+    verbose=True
 ):
     if low_memory is True and low_memory_format not in ["parquet", "csv", "feather"]:
         return None, f"Invalid low_memory_format: {low_memory_format}"
@@ -110,9 +111,10 @@ def get_candidates_from_kowalski(
     if err:
         return None, err
 
-    print(
-        f"Expecting {total} candidates between {t_i} and {t_f} for programids {programids} (n_threads: {n_threads}, low_memory: {low_memory})"
-    )
+    if verbose:
+        print(
+            f"Expecting {total} candidates between {t_i} and {t_f} for programids {programids} (n_threads: {n_threads}, low_memory: {low_memory})"
+        )
 
     filename = f"{t_i}_{t_f}_{'_'.join(map(str, programids))}.{format}"
     # look in the low memory dir (which is identical to the dir), if the file exists
@@ -120,12 +122,14 @@ def get_candidates_from_kowalski(
     try:
         existing_data = load_dataframe(filename, None, low_memory_dir)
         if existing_data is not None and len(existing_data) == total:
-            print(
-                f"Found existing data for {filename} with {total} candidates, skipping query"
-            )
+            if verbose:
+                print(
+                    f"Found existing data for {filename} with {total} candidates, skipping query"
+                )
             return existing_data, None
     except Exception as e:
-        print(f"Failed to load existing data for {filename}: {e}, continuing")
+        if verbose:
+            print(f"Failed to load existing data for {filename}: {e}, continuing")
 
     numPerPage = 10000
     batches = int(np.ceil(total / numPerPage))
@@ -168,7 +172,7 @@ def get_candidates_from_kowalski(
     # contextlib.closing should help close opened files or other things
     # it's just added security, it might not be necessary but could be in the future
     with closing(multiprocessing.Pool(processes=n_threads)) as pool:
-        with tqdm(total=total) as pbar:
+        with tqdm(total=total, disable=not verbose) as pbar:
             for response in pool.imap_unordered(_run_query, queries):
                 if not isinstance(response, dict):
                     return None, f"Failed to get candidates from Kowalski: {response}"
@@ -215,5 +219,6 @@ def get_candidates_from_kowalski(
     # sort by jd from oldest to newest (lowest to highest)
     candidates = candidates.sort_values(by="candidate.jd", ascending=True)
 
-    print(f"Got a total of {len(candidates)} candidates between {t_i} and {t_f}")
+    if verbose:
+        print(f"Got a total of {len(candidates)} candidates between {t_i} and {t_f}")
     return candidates, None

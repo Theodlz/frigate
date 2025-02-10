@@ -1,7 +1,7 @@
 from frigate.utils.datasets import save_dataframe
 from frigate.utils.kowalski import get_candidates_from_kowalski
 from frigate.utils.parsers import main_parser_args
-from frigate.utils.skyportal import get_candids_per_filter_from_skyportal
+from frigate.utils.skyportal import get_candids_per_filter_from_skyportal, get_source_metadata_from_skyportal
 
 
 def str_to_bool(value):
@@ -25,18 +25,14 @@ def process_candidates(args):
         low_memory_format=args.output_format,
         low_memory_dir=args.output_directory,
         format=args.output_format,
+        verbose=args.verbose,
     )
     if err or candidates is None:
         print(err)
         exit(1)
 
-    # GET CANDIDATES FROM SKYPORTAL
-    print("Getting candidates from SkyPortal using the following filters:")
-    print(args.filterids)
-    print("Getting candidates from SkyPortal using the following groupIDs:")
-    print(args.groupids)
     candids_per_filter, err = get_candids_per_filter_from_skyportal(
-        args.start, args.end, args.groupids, args.filterids, saved=False
+        args.start, args.end, args.groupids, args.filterids, saved=False, verbose=args.verbose
     )
     if err or candids_per_filter is None:
         print(err)
@@ -61,6 +57,37 @@ def process_candidates(args):
             print(f"Candid {candids} not found in candidates dataframe, skipping...")
             continue
 
+    # for each source that passed at least one filter, get metadata from SkyPortal
+    print("Getting source metadata from SkyPortal...")
+    object_ids = candidates[candidates["passed_filters"].apply(len) > 0]["objectId"].unique()
+    source_metadata, err = get_source_metadata_from_skyportal(object_ids)
+    if err or source_metadata is None:
+        print(err)
+        exit(1)
+
+    # ADD SOURCE METADATA TO CANDIDATES
+    candidates["groups"] = [[] for _ in range(len(candidates))]
+    candidates["classifications"] = [[] for _ in range(len(candidates))]
+    # also add a tns_name column to the candidates dataframe
+    candidates["tns_name"] = None
+    for objectId, metadata in source_metadata.items():
+        try:
+            # find the index of the row that has this objectId in the candidates dataframe
+            idx = candidates[candidates["objectId"] == objectId].index
+            # add the groupIDs to the "groups" column of the candidates dataframe
+            candidates.loc[idx, "groups"] = candidates.loc[idx, "groups"].apply(
+                lambda x: x + metadata["group_ids"]
+            )
+            # add the classifications to the "classifications" column of the candidates dataframe
+            candidates.loc[idx, "classifications"] = candidates.loc[
+                idx, "classifications"
+            ].apply(lambda x: x + list(metadata["classifications"]))
+            # add the tns_name to the "tns_name" column of the candidates dataframe
+            candidates.loc[idx, "tns_name"] = metadata["tns_name"]
+        except KeyError:
+            print(f"ObjectID {objectId} not found in candidates dataframe, skipping...")
+            continue
+
     # SAVE CANDIDATES TO DISK
     # filename: <start>_<end>_<programids>.<output_format> (ext added by save_dataframe function)
     filename = f"{args.start}_{args.end}_{'_'.join(map(str, args.programids))}"
@@ -73,11 +100,9 @@ def process_candidates(args):
         output_directory=args.output_directory,
     )
 
-    print(f"Saved candidates to {filepath}")
-
-
-# PARSE COMMAND LINE ARGUMENTS
-args = main_parser_args()
+    if args.verbose:
+        print(f"Saved candidates to {filepath}")
 
 if __name__ == "__main__":
+    args = main_parser_args()
     process_candidates(args)
