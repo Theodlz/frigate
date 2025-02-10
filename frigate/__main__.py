@@ -1,7 +1,10 @@
 from frigate.utils.datasets import save_dataframe
 from frigate.utils.kowalski import get_candidates_from_kowalski
 from frigate.utils.parsers import main_parser_args
-from frigate.utils.skyportal import get_candids_per_filter_from_skyportal, get_source_metadata_from_skyportal
+from frigate.utils.skyportal import (
+    get_candids_per_filter_from_skyportal,
+    get_source_metadata_from_skyportal,
+)
 
 
 def str_to_bool(value):
@@ -32,7 +35,12 @@ def process_candidates(args):
         exit(1)
 
     candids_per_filter, err = get_candids_per_filter_from_skyportal(
-        args.start, args.end, args.groupids, args.filterids, saved=False, verbose=args.verbose
+        args.start,
+        args.end,
+        args.groupids,
+        args.filterids,
+        saved=False,
+        verbose=args.verbose,
     )
     if err or candids_per_filter is None:
         print(err)
@@ -60,7 +68,9 @@ def process_candidates(args):
     # for each source that passed at least one filter, get metadata from SkyPortal
     if args.verbose:
         print("Getting source metadata from SkyPortal...")
-    object_ids = candidates[candidates["passed_filters"].apply(len) > 0]["objectId"].unique()
+    object_ids = candidates[candidates["passed_filters"].apply(len) > 0][
+        "objectId"
+    ].unique()
     source_metadata, err = get_source_metadata_from_skyportal(object_ids)
     if err or source_metadata is None:
         print(err)
@@ -103,6 +113,7 @@ def process_candidates(args):
 
     if args.verbose:
         print(f"Saved candidates to {filepath}")
+
 
 if __name__ == "__main__":
     args = main_parser_args()

@@ -100,7 +100,7 @@ def get_candidates_from_kowalski(
     low_memory_format="parquet",
     low_memory_dir=None,
     format="parquet",
-    verbose=True
+    verbose=True,
 ):
     if low_memory is True and low_memory_format not in ["parquet", "csv", "feather"]:
         return None, f"Invalid low_memory_format: {low_memory_format}"

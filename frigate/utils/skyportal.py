@@ -13,7 +13,9 @@ def get_skyportal_token():
         raise ValueError(f"Failed to get SkyPortal token: {e}")
 
 
-def get_candids_per_filter_from_skyportal(t_i, t_f, groupIDs, filterIDs, saved=False, verbose=True):
+def get_candids_per_filter_from_skyportal(
+    t_i, t_f, groupIDs, filterIDs, saved=False, verbose=True
+):
     host = "https://fritz.science/api/candidates_filter"
     headers = {"Authorization": f"token {get_skyportal_token()}"}
     # compute the isoformat of the start and end dates
@@ -67,7 +69,7 @@ def get_candids_per_filter_from_skyportal(t_i, t_f, groupIDs, filterIDs, saved=F
         total = data.get("totalMatches", total)
         if verbose:
             print(
-                f"Got {counter} candidates at page {page} out of {total/numPerPage:.0f} pages..."
+                f"Got {counter} candidates at page {page} out of {total / numPerPage:.0f} pages..."
             )
         page += 1
 
@@ -84,7 +86,8 @@ def get_candids_per_filter_from_skyportal(t_i, t_f, groupIDs, filterIDs, saved=F
             print(f"Filter {key}: {len(value)}")
     return candids_per_filter, None
 
-# write a function that takes a list of objectIds as input, and for each return the list 
+
+# write a function that takes a list of objectIds as input, and for each return the list
 # of groups that the object has been saved to in SkyPortal
 def get_source_metadata_from_skyportal(objectIds):
     host = "https://fritz.science/api/sources"
@@ -97,8 +100,9 @@ def get_source_metadata_from_skyportal(objectIds):
                 return None, f"Failed to get source from SkyPortal: {response.text}"
             data = response.json().get("data", {})
             group_ids = [group["id"] for group in data.get("groups", [])]
-            classifications = set([
-                classification["classification"] for classification in data.get("classifications", [])
+            classifications = {
+                classification["classification"]
+                for classification in data.get("classifications", [])
                 if (
                     classification["classification"]
                     and classification["ml"] is False
@@ -107,7 +111,7 @@ def get_source_metadata_from_skyportal(objectIds):
                         or classification["probability"] > 0.5
                     )
                 )
-            ])
+            }
             tns_name = data.get("tns_name")
             metadata_per_object[objectId] = {
                 "group_ids": group_ids,
