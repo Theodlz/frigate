@@ -17,12 +17,14 @@ class alert_preprocessor:
         filtered_only=False,
         remove_instrumental=True,
         custom_columns=[],
+        edit_filters=False,
     ):
         self.path = path
         self.drb_cut = drb_cut
         self.filtered_only = filtered_only
         self.custom_columns = custom_columns
         self.remove_instrumental = remove_instrumental
+        self.edit_filters = edit_filters
 
     def load_data(self):
         """
@@ -85,9 +87,10 @@ class alert_preprocessor:
         df["galactic_latitude"] = galactic_latitudes
         # parameter reformatting
         df["candidate.isdiffpos"] = df["candidate.isdiffpos"].map({"f": 0, "t": 1})
-        df["filtered_bool"] = df["passed_filters"].apply(
-            lambda x: 0 if len(x) == 0 else 1
-        )
+        if self.edit_filters:
+            df["filtered_bool"] = df["passed_filters"].apply(
+                lambda x: 0 if len(x) == 0 else 1
+            )
         return df
 
     def edit_columns(self, df, custom_columns=False, remove_instrumental=True):
@@ -98,7 +101,6 @@ class alert_preprocessor:
             df = df[custom_columns]
         else:
             ignore = [
-                "candid",
                 "candidate.jd",
                 "candidate.pid",
                 "candidate.programid",
@@ -163,9 +165,10 @@ class alert_preprocessor:
 
     def preprocess_data(self):
         df = self.load_data()
-        if self.filtered_only:
-            df = df[df["filtered_bool"] == 1]
-        df["passed_filters"] = df["passed_filters"].apply(self.remove_filters)
+        if self.edit_filters:
+            if self.filtered_only:
+                df = df[df["filtered_bool"] == 1]
+            df["passed_filters"] = df["passed_filters"].apply(self.remove_filters)
         df = df[df["candidate.drb"] > self.drb_cut]  # cut likely bogus alerts
         df = self.parameter_modifications(df)
         df = self.edit_columns(
@@ -189,6 +192,7 @@ class prep_TSNE:
         self.df = self.df.drop(
             columns=[
                 "objectId",
+                "candid",
                 "fid",
                 "passed_filters",
                 "fritz_classification",
