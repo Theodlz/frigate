@@ -78,6 +78,12 @@ def main_parser():
         default=False,
         help="Use low memory mode, to reduce RAM usage",
     )
+    parser.add_argument(
+        "--verbose",
+        type=str_to_bool,
+        default=True,
+        help="Print verbose output",
+    )
     return parser
 
 

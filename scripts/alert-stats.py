@@ -70,7 +70,7 @@ def get_candidates_from_skyportal(t_i, t_f, groupIDs, filterIDs, token, saved=Fa
         candidates += [candidate["id"] for candidate in data.get("candidates", [])]
         total = data.get("totalMatches", 0)
         print(
-            f"Got {len(candidates)} candidates at page {page} out of {total/numPerPage:.0f} (queryID: {queryID})"
+            f"Got {len(candidates)} candidates at page {page} out of {total / numPerPage:.0f} (queryID: {queryID})"
         )
         queryID = data.get("queryID", None)
         page += 1
