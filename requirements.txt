@@ -9,3 +9,4 @@ pyarrow
 numpy
 corner
 astropy
+seaborn

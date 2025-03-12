@@ -1,0 +1,25 @@
+[project]
+name = "frigate"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "arrow",
+    "matplotlib",
+    "requests",
+    "joblib",
+    "penquins",
+    "pandas",
+    "fastparquet",
+    "pyarrow",
+    "numpy",
+    "corner",
+    "astropy",
+    "seaborn"
+]
+# add dev dependencies
+[project.optional-dependencies]
+dev = [
+    "pre-commit",
+]
