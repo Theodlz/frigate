@@ -93,7 +93,7 @@ class alert_preprocessor:
             )
         return df
 
-    def shift_errors(df):
+    def shift_errors(self, df):
         """
         reassign -999 error values to be just outside the range of the data
         """
