@@ -32,7 +32,7 @@ def main():
         help="To only work with filtered alerts (will speed up if testing)",
     )
     parser.add_argument(
-        "--use_PCA", type=bool, default=False, help="Include argument to not use PCA"
+        "--use_PCA", action="store_true", help="Include argument to use PCA in prep"
     )
     parser.add_argument(
         "--pca_components", type=int, default=40, help="Number of PCA components"

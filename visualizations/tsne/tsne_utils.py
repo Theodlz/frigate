@@ -93,6 +93,22 @@ class alert_preprocessor:
             )
         return df
 
+    def shift_errors(df):
+        """
+        reassign -999 error values to be just outside the range of the data
+        """
+        for column in df.columns:
+            if pd.api.types.is_numeric_dtype(df[column]):
+                valid_values = df[column][df[column] > -900]
+                if not valid_values.empty:
+                    min_value = valid_values.min()
+                    value_range = valid_values.max() - min_value
+                    new_value = min_value - 0.1 * value_range
+                    df[column] = df[column].apply(
+                        lambda x: new_value if x < -900 else x
+                    )
+        return df
+
     def edit_columns(self, df, custom_columns=False, remove_instrumental=True):
         """
         remove some columns from consideration, rename columns
@@ -171,6 +187,7 @@ class alert_preprocessor:
             df["passed_filters"] = df["passed_filters"].apply(self.remove_filters)
         df = df[df["candidate.drb"] > self.drb_cut]  # cut likely bogus alerts
         df = self.parameter_modifications(df)
+        df = self.shift_errors(df)
         df = self.edit_columns(
             df,
             custom_columns=self.custom_columns,

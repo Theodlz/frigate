@@ -1,4 +1,5 @@
 cache/
 __pycache__/
 visualizations/private_data/
+alerts.parquet
 credentials.yaml
