@@ -109,11 +109,12 @@ class alert_preprocessor:
                     )
         return df
 
-    def edit_columns(self, df, custom_columns=False, remove_instrumental=True):
+    def edit_columns(self, df, custom_columns=[], remove_instrumental=True):
         """
         remove some columns from consideration, rename columns
         """
         if len(custom_columns) > 0:
+            print(f"these are the custom columns: {custom_columns}")
             df = df[custom_columns]
         else:
             ignore = [
@@ -264,6 +265,8 @@ class tSNE:
         self,
         pca_result,
         perplexity=60,
+        early_exaggeration=12,
+        learning_rate="auto",
         max_iter=2000,
         method="barnes_hut",
         n_jobs=8,
@@ -271,6 +274,8 @@ class tSNE:
     ):
         self.pca_result = pca_result
         self.perplexity = perplexity
+        self.early_exaggeration = early_exaggeration
+        self.learning_rate = learning_rate
         self.max_iter = max_iter
         self.method = method
         self.n_jobs = n_jobs
@@ -281,6 +286,8 @@ class tSNE:
             n_components=2,
             verbose=0,
             perplexity=self.perplexity,
+            early_exaggeration=self.early_exaggeration,
+            learning_rate=self.learning_rate,
             max_iter=self.max_iter,
             method=self.method,
             n_jobs=self.n_jobs,
@@ -288,10 +295,11 @@ class tSNE:
         tsne_results = tsne.fit_transform(self.pca_result)
         if self.save_path:
             if self.save_path == "default":
-                time = datetime.now()
-                tsne_save_path = f"../example_data/tsne_results_{time}.pkl"
+                filename = f"tsne_{datetime.now()}.pkl"
+                tsne_save_path = f"../private_data/tsne_trained/{filename}"
             else:
                 tsne_save_path = self.save_path
+                filename = tsne_save_path.split("/")[-1]
             with open(tsne_save_path, "wb") as f:
                 pickle.dump(tsne_results, f)
-        return tsne_results
+        return tsne_results, filename

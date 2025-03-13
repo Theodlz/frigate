@@ -1,4 +1,6 @@
 import argparse
+import csv
+import time
 from tsne_utils import alert_preprocessor, prep_TSNE, tSNE
 
 
@@ -9,14 +11,13 @@ def main():
     )
     parser.add_argument(
         "--drb_cut",
-        type=int,
+        type=float,
         default=0.4,
         help="drb cut value, set at 0 to keep all alerts",
     )
     parser.add_argument(
         "--filtered_only",
-        type=bool,
-        default=False,
+        action="store_true",
         help="To only work with filtered alerts (will speed up if testing)",
     )
     parser.add_argument(
@@ -29,7 +30,7 @@ def main():
         "--remove_instrumental",
         type=bool,
         default=False,
-        help="To only work with filtered alerts (will speed up if testing)",
+        help="Don't train on instrumental parameters (not relevant if using custom columns)",
     )
     parser.add_argument(
         "--use_PCA", action="store_true", help="Include argument to use PCA in prep"
@@ -39,6 +40,18 @@ def main():
     )
     parser.add_argument(
         "--perplexity", type=float, default=60, help="Perplexity for t-SNE"
+    )
+    parser.add_argument(
+        "--early_exaggeration",
+        type=float,
+        default=12.0,
+        help="Controls how tight natural clusters are",
+    )
+    parser.add_argument(
+        "--learning_rate",
+        type=lambda x: float(x) if x.lower() != "auto" else "auto",
+        default="auto",
+        help='Learning rate for t-SNE (float or "auto")',
     )
     parser.add_argument(
         "--max_iter",
@@ -53,7 +66,16 @@ def main():
         "--n_jobs", type=int, default=8, help="Number of jobs to run in parallel"
     )
     parser.add_argument(
+        "--notes", type=str, default="", help="Add any notes to log of the run"
+    )
+    parser.add_argument(
         "--save_path", type=str, default="default", help="Path to save t-SNE results"
+    )
+    parser.add_argument(
+        "--log_path",
+        type=str,
+        default="../private_data/tsne_trained/log_tsne_trained.csv",
+        help="Path to log t-SNE runs",
     )
 
     args = parser.parse_args()
@@ -75,13 +97,40 @@ def main():
     tsne = tSNE(
         data,
         perplexity=args.perplexity,
+        early_exaggeration=args.early_exaggeration,
+        learning_rate=args.learning_rate,
         max_iter=args.max_iter,
         method=args.method,
         n_jobs=args.n_jobs,
         save_path=args.save_path,
     )
-    tsne.get_tsne()
+    start_time = time.time()
+    tsne, filename = tsne.get_tsne()
+    end_time = time.time()
     print("done tsne")
+
+    if args.log_path:
+        row = [
+            filename,
+            args.alerts_path.split("/")[-1].replace(".parquet", ""),
+            len(tsne),
+            args.drb_cut,
+            args.filtered_only,
+            args.custom_columns,
+            args.remove_instrumental,
+            args.use_PCA,
+            args.perplexity,
+            args.early_exaggeration,
+            args.learning_rate,
+            args.max_iter,
+            args.method,
+            args.n_jobs,
+            round(end_time - start_time),
+            args.notes,
+        ]
+        with open(args.log_path, "a", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(row)
 
 
 if __name__ == "__main__":

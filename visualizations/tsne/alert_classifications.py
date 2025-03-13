@@ -39,19 +39,22 @@ def add_class_to_df(df, column_name, object_id, class_value):
     add classification to the dataframe
     """
     df[column_name] = None
-    df.loc[df["objectId"] == object_id, column_name] = class_value
+    if object_id:
+        for id, value in zip(object_id, class_value):
+            df.loc[df["objectId"] == id, column_name] = value
 
 
 # fritz groups assigned
 
 
 class FritzNightClassifications:
-    def __init__(self, token):
-        self.token = token
+    def __init__(self, df, add_to_df=True):
+        self.df = df
+        self.add_to_df = add_to_df
 
-    def get_night_classifications(self, df, add_to_df=True):
+    def get_night_classifications(self):
         # get dates
-        min_jd, max_jd = df["candidate.jd"].min(), df["candidate.jd"].max()
+        min_jd, max_jd = self.df["candidate.jd"].min(), self.df["candidate.jd"].max()
         min_time, max_time = Time(min_jd, format="jd"), Time(max_jd, format="jd")
         startdate, enddate = min_time.utc.strftime("%Y-%m-%d"), max_time.utc.strftime(
             "%Y-%m-%d"
@@ -59,7 +62,7 @@ class FritzNightClassifications:
 
         # api call
         endpoint = f"https://fritz.science/api/classification?startDate={startdate}&endDate={enddate}&numPerPage=500"
-        headers = {"Authorization": f"token {self.token}"}
+        headers = {"Authorization": f"token {fritz_token}"}
         response = requests.request("GET", endpoint, headers=headers)
 
         if response.status_code != 200:
@@ -77,10 +80,10 @@ class FritzNightClassifications:
             for classification in data["data"]["classifications"]
         ]
 
-        if add_to_df:
-            add_class_to_df(df, "fritz_night_classification", obj_id, value)
+        if self.add_to_df:
+            add_class_to_df(self.df, "fritz_night_classification", obj_id, value)
 
-        return data, df
+        return data, self.df
 
 
 # SIMBAD classifications
@@ -136,7 +139,9 @@ class SimbadClassifications:
     def get_classifications(self):
         if self.filtered_only:
             self.df = get_filtered_subset(self.df)  # do this bc query is slow
-        coords = [(x, y) for x, y in zip(self.df["ra"], self.df["dec"])]
+        coords = [
+            (x, y) for x, y in zip(self.df["candidate.ra"], self.df["candidate.dec"])
+        ]
         sky_coords = [
             SkyCoord(ra=ra * u.degree, dec=dec * u.degree, frame="icrs")
             for ra, dec in coords
@@ -164,7 +169,9 @@ class SimbadClassifications:
                 pickle.dump(simbad_dict, f)
 
         if self.add_to_df:
-            add_class_to_df(self.df, "simbad_classification", obj_ids, simbad_results)
+            add_class_to_df(
+                self.df, "simbad_classification", obj_ids.tolist(), simbad_results
+            )
 
         if self.display_results:
             matches = [x for x in simbad_results if x]
@@ -180,9 +187,13 @@ class SimbadClassifications:
 
 
 class CatalogClassifications:
-    def __init__(self, kowalski_password):
-        self.kowalski_password = kowalski_password
-        self.kowalski = None
+    def __init__(self, df, catalog, projection, machine, add_to_df=True):
+        self.df = df
+        self.catalog = catalog
+        self.projection = projection
+        self.machine = machine
+        self.add_to_df = add_to_df
+        self.kowalski = self.connect_to_kowalski()
 
     def connect_to_kowalski(self):
         instances = {
@@ -192,7 +203,7 @@ class CatalogClassifications:
                 "protocol": "https",
                 "port": 443,
                 "username": "knolan",
-                "password": self.kowalski_password,
+                "password": kowalski_password,
                 "timeout": 6000,
             },
             "gloria": {
@@ -201,18 +212,16 @@ class CatalogClassifications:
                 "protocol": "https",
                 "port": 443,
                 "username": "knolan",
-                "password": self.kowalski_password,
+                "password": kowalski_password,
                 "timeout": 6000,
             },
         }
-        self.kowalski = Kowalski(instances=instances)
+        return Kowalski(instances=instances)
 
-    def kowalski_catalog_conesearch(
-        self, df, catalog, projection, machine, add_to_df=True
-    ):
-        ra_list = df["candidate.ra"].values
-        dec_list = df["candidate.dec"].values
-        obj_ids = df["objectId"].values
+    def kowalski_catalog_conesearch(self):
+        ra_list = self.df["candidate.ra"].values
+        dec_list = self.df["candidate.dec"].values
+        obj_ids = self.df["objectId"].values
 
         queries = [
             {
@@ -223,32 +232,40 @@ class CatalogClassifications:
                         "cone_search_unit": "arcsec",
                         "radec": {object_name: [ra, dec]},
                     },
-                    "catalogs": {catalog: {"filter": {}, "projection": projection}},
+                    "catalogs": {
+                        self.catalog: {"filter": {}, "projection": self.projection}
+                    },
                 },
                 "kwargs": {"filter_first": False},
             }
             for object_name, ra, dec in zip(obj_ids, ra_list, dec_list)
         ]
         responses = self.kowalski.query(
-            queries=queries, name=machine, use_batch_query=True, max_n_threads=4
+            queries=queries, name=self.machine, use_batch_query=True, max_n_threads=4
         )
-        data = [x.get("data", []).get(catalog, []) for x in responses.get(machine, {})]
+        data = [
+            x.get("data", []).get(self.catalog, [])
+            for x in responses.get(self.machine, {})
+        ]
         match = [True if v else False for d in data for k, v in d.items()]
-        if add_to_df:
-            add_class_to_df(df, f"{catalog}_classification", obj_ids, match)
-        return data, df
+        if self.add_to_df:
+            add_class_to_df(
+                self.df, f"{self.catalog}_classification", obj_ids.tolist(), match
+            )
+        return data, self.df
 
 
 # check against catalog of Fritz classifications
 
 
 class FritzClassifications:
-    def __init__(self):
-        pass
+    def __init__(self, df, add_to_df=True):
+        self.df = df
+        self.add_to_df = add_to_df
 
-    def get_fritz_classes(self, df, add_to_df=True):
-        fritz_classification_catalog = pd.read_csv("../example_data/frigateclasses.csv")
-        obj_ids = df["objectId"].values
+    def get_fritz_classes(self):
+        fritz_classification_catalog = pd.read_csv("../private_data/fritzclasses.csv")
+        obj_ids = self.df["objectId"].values
         fritz_dict = dict(
             zip(
                 fritz_classification_catalog["obj_id"],
@@ -256,19 +273,22 @@ class FritzClassifications:
             )
         )
         match = [fritz_dict.get(obj_id, None) for obj_id in obj_ids]
-        if add_to_df:
-            add_class_to_df(df, "fritz_catalog_classification", obj_ids, match)
-        return match, df
+        if self.add_to_df:
+            add_class_to_df(
+                self.df, "fritz_catalog_classification", obj_ids.tolist(), match
+            )
+        return match, self.df
 
 
 # assign classification based on acai scores
 
 
 class AcaiClassifications:
-    def __init__(self):
-        pass
+    def __init__(self, df, add_to_df=True):
+        self.df = df
+        self.add_to_df = add_to_df
 
-    def get_acai_classes(self, df, add_to_df=True):
+    def get_acai_classes(self):
         def determine_acai(row):
             conditions = {
                 "H": row["classifications.acai_h"] > 0.8,
@@ -283,22 +303,24 @@ class AcaiClassifications:
             else:
                 return "ambiguous"
 
-        acai = df.apply(determine_acai, axis=1).tolist()
+        ids = self.df["objectId"].values.tolist()
+        acai = self.df.apply(determine_acai, axis=1).tolist()
 
-        if add_to_df:
-            add_class_to_df(df, "acai_classification", df["objectId"].values, acai)
+        if self.add_to_df:
+            add_class_to_df(self.df, "acai_classification", ids, acai)
 
-        return acai, df
+        return acai, self.df
 
 
 # assign classification based on what filters passed alerts and what they should look for
 
 
 class FilterClassifications:
-    def __init__(self):
-        pass
+    def __init__(self, df, add_to_df=True):
+        self.df = df
+        self.add_to_df = add_to_df
 
-    def get_filter_classes(self, df, add_to_df=True):
+    def get_filter_classes(self):
         # Create a dictionary of the classes of objects different filters should look for
         class_dict = {
             "SNe": [1, 3, 9, 11, 13, 1174, 1176, 1178, 1179, 1180, 1182, 107],
@@ -317,11 +339,14 @@ class FilterClassifications:
                     classes.append(class_name)
             return ", ".join(classes) if classes else None
 
-        filter_class = df.apply(determine_class, axis=1).tolist()
+        filter_class = self.df.apply(determine_class, axis=1).tolist()
 
-        if add_to_df:
+        if self.add_to_df:
             add_class_to_df(
-                df, "filter_classification", df["objectId"].values, filter_class
+                self.df,
+                "filter_classification",
+                self.df["objectId"].values,
+                filter_class,
             )
 
-        return filter_class, df
+        return filter_class, self.df
