@@ -1,6 +1,7 @@
 cache/
 __pycache__/
 visualizations/private_data/
+visualizations/tsne/private_tsne_experiments.ipynb
 data/
 alerts.parquet
 credentials.yaml
