@@ -153,11 +153,11 @@ class TsnePlotter_featurecolor:
                 "#FF5733",
                 "#33FF57",
                 "#3357FF",
-                "#FF5733",
+                "#FF8C00",
                 "#FF33F6",
-                "#FF5733",
-                "#FF5733",
-                "#33FFF6",
+                "#8A2BE2",
+                "#FF1493",
+                "#33FFF6"
             ]
             unique_values = df[parameter].nunique()
             assign_palette = base_palette[:unique_values]

@@ -2,6 +2,8 @@ cache/
 __pycache__/
 visualizations/private_data/
 visualizations/tsne/private_tsne_experiments.ipynb
+visualizations/tsne/tsne_feature_importance.ipynb
+visualizations/tsne/rf_classifier.py
 data/
 alerts.parquet
 credentials.yaml

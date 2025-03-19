@@ -228,6 +228,7 @@ class prep_TSNE:
                 "gaia",
                 "ra",
                 "dec",
+                "type"
             ],
             errors="ignore",
         )
