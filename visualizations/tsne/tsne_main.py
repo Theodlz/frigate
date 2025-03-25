@@ -1,7 +1,6 @@
 import argparse
-import csv
 import time
-from tsne_utils import alert_preprocessor, prep_TSNE, tSNE
+from tsne_utils import alert_preprocessor, prep_TSNE, tSNE, logging
 
 
 def main():
@@ -116,7 +115,6 @@ def main():
             len(tsne),
             args.drb_cut,
             args.filtered_only,
-            args.custom_columns,
             args.remove_instrumental,
             args.use_PCA,
             args.perplexity,
@@ -125,12 +123,15 @@ def main():
             args.max_iter,
             args.method,
             args.n_jobs,
-            round(end_time - start_time),
+            round((end_time - start_time)/3600, 2),
+            args.custom_columns,
             args.notes,
         ]
-        with open(args.log_path, "a", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(row)
+        logging(args.log_path, row).log_run()
+    print("logged run")
+    print("t-SNE finished successfully")
+
+
 
 
 if __name__ == "__main__":

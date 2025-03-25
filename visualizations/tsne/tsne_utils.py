@@ -1,13 +1,13 @@
 import pandas as pd
 import numpy as np
 import pickle
+import csv
+from datetime import datetime
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-from datetime import datetime
-
 
 class alert_preprocessor:
     def __init__(
@@ -297,13 +297,42 @@ class tSNE:
             n_jobs=self.n_jobs,
         )
         tsne_results = tsne.fit_transform(self.pca_result)
-        if self.save_path:
-            if self.save_path == "default":
-                filename = f"tsne_{datetime.now()}.pkl"
-                tsne_save_path = f"../private_data/tsne_trained/{filename}"
-            else:
-                tsne_save_path = self.save_path
-                filename = tsne_save_path.split("/")[-1]
-            with open(tsne_save_path, "wb") as f:
-                pickle.dump(tsne_results, f)
+        if self.save_path == "default":
+            filename = f"tsne_{datetime.now()}.pkl"
+            tsne_save_path = f"../private_data/tsne_trained/{filename}"
+        else:
+            tsne_save_path = self.save_path
+            filename = tsne_save_path.split("/")[-1]
+        with open(tsne_save_path, "wb") as f:
+            pickle.dump(tsne_results, f)
         return tsne_results, filename
+
+
+class logging:
+    def __init__(self, log_path, row):
+        self.log_path = log_path
+        self.row = row
+
+    def log_run(self):
+        with open(self.log_path, "a", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            if csvfile.tell() == 0:
+                writer.writerow([
+                    "filename", 
+                    "night", 
+                    "num_alerts", 
+                    "drb_cut", 
+                    "filtered_only", 
+                    "remove_instrumental", 
+                    "pca", 
+                    "perplexity", 
+                    "early_exageration", 
+                    "learning_rate", 
+                    "iterations", 
+                    "method", 
+                    "n_jobs", 
+                    "training_time", 
+                    "custom_columns", 
+                    "notes"
+                ])  
+            writer.writerow(self.row)
