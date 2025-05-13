@@ -7,7 +7,8 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
+from sklearn.manifold import TSNE as sklearn_TSNE
+from openTSNE import TSNE as openTSNE_TSNE
 
 class alert_preprocessor:
     def __init__(
@@ -275,6 +276,7 @@ class tSNE:
         method="barnes_hut",
         n_jobs=8,
         save_path="default",
+        implementation="sklearn",
     ):
         self.pca_result = pca_result
         self.perplexity = perplexity
@@ -284,19 +286,32 @@ class tSNE:
         self.method = method
         self.n_jobs = n_jobs
         self.save_path = save_path
+        self.implementation = implementation
 
     def get_tsne(self):
-        tsne = TSNE(
-            n_components=2,
-            verbose=0,
-            perplexity=self.perplexity,
-            early_exaggeration=self.early_exaggeration,
-            learning_rate=self.learning_rate,
-            max_iter=self.max_iter,
-            method=self.method,
-            n_jobs=self.n_jobs,
-        )
-        tsne_results = tsne.fit_transform(self.pca_result)
+        if self.implementation == "sklearn":
+            tsne = sklearn_TSNE(
+                n_components=2,
+                verbose=0,
+                perplexity=self.perplexity,
+                early_exaggeration=self.early_exaggeration,
+                learning_rate=self.learning_rate,
+                max_iter=self.max_iter,
+                method=self.method,
+                n_jobs=self.n_jobs,
+            )
+            tsne_results = tsne.fit_transform(self.pca_result)
+
+        elif self.implementation == "openTSNE":
+            tsne = openTSNE_TSNE(
+                    perplexity=self.perplexity,
+                    metric=self.method,
+                    n_jobs=self.n_jobs,
+                    random_state=42,
+                    verbose=True,
+                )
+            tsne_results = tsne.fit(self.pca_result)
+        
         if self.save_path == "default":
             filename = f"tsne_{datetime.now()}.pkl"
             tsne_save_path = f"../private_data/tsne_trained/{filename}"
@@ -305,7 +320,9 @@ class tSNE:
             filename = tsne_save_path.split("/")[-1]
         with open(tsne_save_path, "wb") as f:
             pickle.dump(tsne_results, f)
+        
         return tsne_results, filename
+
 
 
 class logging:
@@ -325,6 +342,7 @@ class logging:
                     "filtered_only", 
                     "remove_instrumental", 
                     "pca", 
+                    "implementation",
                     "perplexity", 
                     "early_exageration", 
                     "learning_rate", 

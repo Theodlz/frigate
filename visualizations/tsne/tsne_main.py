@@ -35,7 +35,10 @@ def main():
         "--use_PCA", action="store_true", help="Include argument to use PCA in prep"
     )
     parser.add_argument(
-        "--pca_components", type=int, default=40, help="Number of PCA components"
+        "--pca_components", type=int, default=None, help="Number of PCA components"
+    )
+    parser.add_argument(
+        "--implementation", type=str, default="openTSNE", help="openTSNE or sklearn"
     )
     parser.add_argument(
         "--perplexity", type=float, default=60, help="Perplexity for t-SNE"
@@ -65,9 +68,6 @@ def main():
         "--n_jobs", type=int, default=8, help="Number of jobs to run in parallel"
     )
     parser.add_argument(
-        "--notes", type=str, default="", help="Add any notes to log of the run"
-    )
-    parser.add_argument(
         "--save_path", type=str, default="default", help="Path to save t-SNE results"
     )
     parser.add_argument(
@@ -75,6 +75,12 @@ def main():
         type=str,
         default="../private_data/tsne_trained/log_tsne_trained.csv",
         help="Path to log t-SNE runs",
+    )
+    parser.add_argument(
+        "--log_notes",
+        type=str,
+        default="None",
+        help="Add any notes to log of the run",
     )
 
     args = parser.parse_args()
@@ -102,6 +108,7 @@ def main():
         method=args.method,
         n_jobs=args.n_jobs,
         save_path=args.save_path,
+        implementation=args.implementation,
     )
     start_time = time.time()
     tsne, filename = tsne.get_tsne()
@@ -117,6 +124,8 @@ def main():
             args.filtered_only,
             args.remove_instrumental,
             args.use_PCA,
+            args.pca_components,
+            args.implementation,
             args.perplexity,
             args.early_exaggeration,
             args.learning_rate,
@@ -125,7 +134,7 @@ def main():
             args.n_jobs,
             round((end_time - start_time)/3600, 2),
             args.custom_columns,
-            args.notes,
+            args.log_notes,
         ]
         logging(args.log_path, row).log_run()
     print("logged run")
