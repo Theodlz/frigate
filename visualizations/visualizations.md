@@ -4,11 +4,11 @@ This directory contains tools to visualize the ZTF alert data which can be retri
 
 Additional development of these visualization tools can be found on this [Miro board](https://miro.com/app/board/uXjVIHR3y_Y=/).
 
+<br><br>
+
 ### t-SNE
 
-t-SNE is an tool to visualize high-dimensional data. An introduction to using t-SNE can be found in the notebook [tsne_example](tsne/tsne_example.ipynb).
-
-t-SNE can also be run via command line like so:
+t-SNE is an tool to visualize high-dimensional data. An introduction to using t-SNE can be found in the notebook [tsne_example](tsne/tsne_example.ipynb). t-SNE can also be run via command line like so:
 
 ```bash
 PYTHONPATH=. python tsne/tsne_main.py --alerts_path ./example_data/240319_public_filtered.parquet --custom_columns "candidate.sharpnr" "candidate.sgscore1" "candidate.chinr" --perplexity 50 --max_iter 500 --method barnes_hut --n_jobs 8 --save_path ./example_data/tsne_trained_example.pkl
