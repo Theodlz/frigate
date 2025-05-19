@@ -1,10 +1,10 @@
-### Visualizing ZTF alerts
+# Visualizing ZTF alerts
 
-This directory contains tools to visualize the ZTF alert data which can be retrieved with Frigate. An example parquet file, modeling the data retrieved by Frigate for a single night of alerts, is saved in the [example_data directory](./example_data) directory and can be used to test these plotting options. An introduction to analyzing ZTF alerts can be found in the notebook [intro_to_frigate](./intro_to_frigate.ipynb).
+This directory contains tools to visualize the ZTF alert data which can be retrieved with Frigate. An example parquet file, modeling the data retrieved by Frigate for a single night of alerts, is saved in the [example_data directory](./example_data) and can be used to test these plotting options. An introduction to analyzing ZTF alerts can be found in the notebook [intro_to_frigate](./intro_to_frigate.ipynb).
 
 Additional development of these visualization tools can be found on this [Miro board](https://miro.com/app/board/uXjVIHR3y_Y=/).
 
-# t-SNE
+### t-SNE
 
 t-SNE is an tool to visualize high-dimensional data. An introduction to using t-SNE can be found in the notebook [tsne_example](tsne/tsne_example.ipynb).
 
@@ -14,34 +14,52 @@ t-SNE can also be run via command line like so:
 PYTHONPATH=. python tsne/tsne_main.py --alerts_path ./example_data/240319_public_filtered.parquet --custom_columns "candidate.sharpnr" "candidate.sgscore1" "candidate.chinr" --perplexity 60 --max_iter 5000 --method barnes_hut --n_jobs 8 --save_path ../example_data/tsne_trained/tsne_trained_example.pkl
 ```
 
-The only required argument to run is an "alerts_path". Optional arguments include:
+The only required argument to run is an `alerts_path`, for example, to a night of alerts that has been saved locally with Frigate.
 
-- drb_cut: an integer value between 0 and 1, so t-SNE is trained only on alerts above a Real-bogus score threshold.
+#### Optional Arguments:
 
-- filtered_only: if True, then only train on alerts that were filtered. This can additionaly be helpful to try out the t-SNE because it will run very quickly given the smaller number of alerts.
+- **`drb_cut`** _(float)_:
+  An integer value between 0 and 1, so t-SNE is trained only on alerts above a Real-bogus score threshold.
 
-- remove_instrumental: if True, then alert parameters related to image quality, color filter etc. will be removed.
+- **`filtered_only`** _(bool)_:
+  If `True`, only train on alerts that were filtered. This can additionally be helpful to try out t-SNE because it will run very quickly given the smaller number of alerts, where a full night of alerts can take over an hour.
 
-- use_PCA: if True, then the data will first be reduced to some number of components using PCA, which is a common method in t-SNE implementations and can help reduce redundancy from linearly correlated parameters.
+- **`remove_instrumental`** _(bool)_:
+  If `True`, alert parameters related to image quality, color filter, etc., will be removed.
 
-- pca_components: and integer number of components to output from PCA
+- **`use_PCA`** _(bool)_:
+  If `True`, the data will first be reduced to some number of components using PCA, which is a common method in t-SNE implementations and can help reduce redundancy from linearly correlated parameters.
 
-- implementation: select the t-SNE implementation to use, either "openTSNE" or "sklearn"
+- **`pca_components`** _(int)_:
+  The number of components to output from PCA.
 
-- perplexity: a t-SNE hyperparameter
+- **`implementation`** _(str)_:
+  Select the t-SNE implementation to use, either `"openTSNE"` or `"sklearn"`.
 
-- early_exaggeration: a t-SNE hyperparameter
+- **`perplexity`** _(float)_:
+  A t-SNE hyperparameter.
 
-- learning_rate: a t-SNE hyperparameter
+- **`early_exaggeration`** _(float)_:
+  A t-SNE hyperparameter.
 
-- max_iter: a t-SNE hyperparameter
+- **`learning_rate`** _(float)_:
+  A t-SNE hyperparameter.
 
-- method: a t-SNE hyperparameter
+- **`max_iter`** _(int)_:
+  A t-SNE hyperparameter.
 
-- n_jobs: a t-SNE hyperparameter
+- **`method`** _(str)_:
+  A t-SNE hyperparameter.
 
-- custom_colomns: provide a list of custom parameters (as in example above) to train on, otherwise will train on alert parameters (automatically remove absolutely irrelevant parameters ie version numbers).
+- **`n_jobs`** _(int)_:
+  A t-SNE hyperparameter.
 
-- log_path: path to save the log that will automatically be saved for the t-SNE run. The default is "../example_data/tsne_trained/log_tsne_trained.csv"
+- **`custom_columns`** _(list)_:
+  Provide a list of custom parameters (as in the example above) to train on. Otherwise, it will train on alert parameters (automatically removing irrelevant parameters, e.g., version numbers).
 
-- log_notes: string, add a note to the log that will automatically be saved for the t-SNE run
+- **`log_path`** _(str)_:
+  Path to save the log that will automatically be saved for the t-SNE run.
+  **Default**: `../example_data/tsne_trained/log_tsne_trained.csv`
+
+- **`log_notes`** _(str)_:
+  Add a note to the log that will automatically be saved for the t-SNE run.
