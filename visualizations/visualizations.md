@@ -14,7 +14,7 @@ t-SNE can also be run via command line like so:
 PYTHONPATH=. python tsne/tsne_main.py --alerts_path ./example_data/240319_public_filtered.parquet --custom_columns "candidate.sharpnr" "candidate.sgscore1" "candidate.chinr" --perplexity 50 --max_iter 500 --method barnes_hut --n_jobs 8 --save_path ./example_data/tsne_trained_example.pkl
 ```
 
-The only required argument to run is an `alerts_path`, for example, to a night of alerts that has been saved locally with Frigate.
+The only argument required to run is an `alerts_path`, for example, the path to a night of alerts that has been saved locally with Frigate.
 
 #### Optional Arguments:
 
