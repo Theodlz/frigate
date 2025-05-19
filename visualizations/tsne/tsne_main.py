@@ -73,7 +73,7 @@ def main():
     parser.add_argument(
         "--log_path",
         type=str,
-        default="../example_data/tsne_trained/log_tsne_trained.csv",
+        default="./example_data/log_tsne_trained.csv",
         help="Path to log t-SNE runs",
     )
     parser.add_argument(
