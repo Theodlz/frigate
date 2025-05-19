@@ -73,7 +73,7 @@ def main():
     parser.add_argument(
         "--log_path",
         type=str,
-        default="../private_data/tsne_trained/log_tsne_trained.csv",
+        default="../example_data/tsne_trained/log_tsne_trained.csv",
         help="Path to log t-SNE runs",
     )
     parser.add_argument(
@@ -132,15 +132,13 @@ def main():
             args.max_iter,
             args.method,
             args.n_jobs,
-            round((end_time - start_time)/3600, 2),
+            round((end_time - start_time) / 3600, 2),
             args.custom_columns,
             args.log_notes,
         ]
         logging(args.log_path, row).log_run()
     print("logged run")
     print("t-SNE finished successfully")
-
-
 
 
 if __name__ == "__main__":

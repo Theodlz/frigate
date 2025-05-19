@@ -10,6 +10,7 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE as sklearn_TSNE
 from openTSNE import TSNE as openTSNE_TSNE
 
+
 class alert_preprocessor:
     def __init__(
         self,
@@ -304,14 +305,14 @@ class tSNE:
 
         elif self.implementation == "openTSNE":
             tsne = openTSNE_TSNE(
-                    perplexity=self.perplexity,
-                    metric=self.method,
-                    n_jobs=self.n_jobs,
-                    random_state=42,
-                    verbose=True,
-                )
+                perplexity=self.perplexity,
+                metric=self.method,
+                n_jobs=self.n_jobs,
+                random_state=42,
+                verbose=True,
+            )
             tsne_results = tsne.fit(self.pca_result)
-        
+
         if self.save_path == "default":
             filename = f"tsne_{datetime.now()}.pkl"
             tsne_save_path = f"../private_data/tsne_trained/{filename}"
@@ -320,9 +321,8 @@ class tSNE:
             filename = tsne_save_path.split("/")[-1]
         with open(tsne_save_path, "wb") as f:
             pickle.dump(tsne_results, f)
-        
-        return tsne_results, filename
 
+        return tsne_results, filename
 
 
 class logging:
@@ -334,23 +334,25 @@ class logging:
         with open(self.log_path, "a", newline="") as csvfile:
             writer = csv.writer(csvfile)
             if csvfile.tell() == 0:
-                writer.writerow([
-                    "filename", 
-                    "night", 
-                    "num_alerts", 
-                    "drb_cut", 
-                    "filtered_only", 
-                    "remove_instrumental", 
-                    "pca", 
-                    "implementation",
-                    "perplexity", 
-                    "early_exageration", 
-                    "learning_rate", 
-                    "iterations", 
-                    "method", 
-                    "n_jobs", 
-                    "training_time", 
-                    "custom_columns", 
-                    "notes"
-                ])  
+                writer.writerow(
+                    [
+                        "filename",
+                        "night",
+                        "num_alerts",
+                        "drb_cut",
+                        "filtered_only",
+                        "remove_instrumental",
+                        "pca",
+                        "implementation",
+                        "perplexity",
+                        "early_exageration",
+                        "learning_rate",
+                        "iterations",
+                        "method",
+                        "n_jobs",
+                        "training_time",
+                        "custom_columns",
+                        "notes",
+                    ]
+                )
             writer.writerow(self.row)
