@@ -1,10 +1,36 @@
 # Visualizing ZTF alerts
 
-This directory contains tools to visualize the ZTF alert data which can be retrieved with Frigate. An example parquet file, modeling the data retrieved by Frigate for a single night of alerts, is saved in the [example_data directory](./example_data) and can be used to test these plotting options. An introduction to analyzing ZTF alerts can be found in the notebook [intro_to_frigate](./intro_to_frigate.ipynb).
+This directory contains tools to visualize the ZTF alert data which can be retrieved with Frigate. An example parquet file, modeling the data retrieved by Frigate for a single night of alerts, is saved in the [example_data directory](./example_data) and can be used to test these plotting options. An introduction to analyzing ZTF alerts can be found in the notebook [intro_to_frigate](./intro_to_frigate.ipynb). Additional analysis tools are demonstrated in [advanced_vis_frigate](./advanced_vis_frigate.ipynb).
 
 Additional development of these visualization tools can be found on this [Miro board](https://miro.com/app/board/uXjVIHR3y_Y=/).
 
+A library of plots is also shown in [these slides](https://docs.google.com/presentation/d/1tLZ_QJ0cQXdJHL7PKWDfVQ4HYYZ_ksNrbPm6PHHAa6w/edit?usp=sharing)
+
 <br><br>
+
+### Guiding questions
+
+Which alerts are we sending that are never looked at and don't need to be sent (filter efficiency)?
+
+Which alerts are we sending that are never looked at but are interesting (filter gap analysis, maybe)?
+
+### Target outcomes
+
+Make suggestions for improvements to filter efficiency
+
+Provide the community with tools to better understand filter performance, and to build filters
+
+Find interesting unfiltered objects / unexplored areas of parameter space
+
+### Plots and tools overview
+
+Basic distributions: histograms, violin plots, scatter plots, corner plots, pair plots
+
+Feature importance: Pearson correlation matrix; Random forest mean difference in impurity and feature permutation; Principle Component Analysis
+
+Visualize filters: chord diagram,
+
+Visualize high dimensional data: t-SNE, UMAP, parallel histogram plots
 
 ### t-SNE
 
@@ -55,11 +81,11 @@ The only argument required to run is an `alerts_path`, for example, the path to 
   A t-SNE hyperparameter.
 
 - **`custom_columns`** _(list)_:
-  Provide a list of custom parameters (as in the example above) to train on. Otherwise, it will train on alert parameters (automatically removing irrelevant parameters, e.g., version numbers).
+  Provide a list of custom parameters (as in the example above) to train on. Otherwise, t-SNE will train on all alert parameters (automatically removing irrelevant parameters, e.g., version numbers).
 
 - **`log_path`** _(str)_:
   Path to save the log that will automatically be saved for the t-SNE run.
-  **Default**: `../example_data/tsne_trained/log_tsne_trained.csv`
+  **Default**: `../example_data/log_tsne_trained.csv`
 
 - **`log_notes`** _(str)_:
-  Add a note to the log that will automatically be saved for the t-SNE run.
+  Add a custom note to the log that will automatically be saved for the t-SNE run.

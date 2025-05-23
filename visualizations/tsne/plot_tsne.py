@@ -389,3 +389,72 @@ class Tsne_subset:
         plt.xlabel("t-SNE Dimension 1", fontsize=18)
         plt.ylabel("t-SNE Dimension 2", fontsize=18)
         plt.title("t-SNE Plot from ZTF Example Night", fontsize=25)
+
+
+class UMAPPlotter:
+    def __init__(self, df):
+        self.df = df
+
+    def plot_filtered_df(self):
+        filtered = self.df[self.df["filtered_bool"] == 1]
+        unfiltered = self.df[self.df["filtered_bool"] == 0]
+        plotordered = pd.concat([unfiltered, filtered])
+
+        custom_palette = ["#d8dcd6", "#3357FF"]
+
+        plt.figure(figsize=(16, 10))
+        sns.scatterplot(
+            x="umap-2d-one",
+            y="umap-2d-two",
+            hue="filtered_bool",
+            palette=custom_palette,
+            data=plotordered,
+            legend="full",
+            alpha=0.7,
+        )
+
+        plt.legend(title="Filtered", title_fontsize="18", fontsize="15")
+
+        # Customize the axis labels
+        plt.xlabel("UMAP Dimension 1", fontsize=18)
+        plt.ylabel("UMAP Dimension 2", fontsize=18)
+
+        # Add a title
+        plt.title("UMAP Plot of ZTF Example Night", fontsize=25)
+
+        plt.show()
+
+    def plot_parameter(self, parameter, reorder=True, remove_error_values=True):
+        # reorder so highest parameter value plots on top
+        if reorder:
+            self.df = self.df.sort_values(by=parameter, ascending=False)
+
+        if remove_error_values:
+            self.df = self.df[self.df[parameter] > -600]
+
+        plt.figure(figsize=(16, 10))
+        ax = plt.gca()  # Get the current axes
+        sns.scatterplot(
+            x="umap-2d-one",
+            y="umap-2d-two",
+            hue=parameter,
+            palette="viridis",
+            data=self.df,
+            legend=False,
+            alpha=0.7,
+            ax=ax,
+        )
+
+        # Add a colorbar
+        norm = plt.Normalize(self.df[parameter].min(), self.df[parameter].max())
+        sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+        sm.set_array([])
+        cbar = plt.colorbar(sm, ax=ax)
+        cbar.set_label(f"{parameter}", fontsize=18)
+
+        # Customize the axis labels
+        plt.xlabel("UMAP Dimension 1", fontsize=18)
+        plt.ylabel("UMAP Dimension 2", fontsize=18)
+
+        # Add a title
+        plt.title("UMAP Plot for Example Night", fontsize=25)

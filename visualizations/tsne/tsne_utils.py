@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE as sklearn_TSNE
 from openTSNE import TSNE as openTSNE_TSNE
+import umap
 
 
 class alert_preprocessor:
@@ -323,6 +324,62 @@ class tSNE:
             pickle.dump(tsne_results, f)
 
         return tsne_results, filename
+
+
+class UMAP:
+    def __init__(self, df, save_path="default", columns_for_umap="default"):
+        self.df = df
+        self.save_path = save_path
+        self.columns_for_umap = columns_for_umap
+
+    def get_umap(self):
+        if self.columns_for_umap == "default":
+            columns_for_umap = [
+                "magpsf",
+                "drb",
+                "age",
+                "lastobs",
+                "ndethist",
+                "chinr",
+                "sharpnr",
+                "sigmagnr",
+                "bts",
+                "isdiffpos",
+                "szmag1",
+                "srmag1",
+                "simag1",
+                "sgmag1",
+                "sgscore1",
+            ]
+        else:
+            if not isinstance(self.columns_for_umap, list):
+                raise ValueError("columns_for_umap should be a list of column names.")
+            columns_for_umap = self.columns_for_umap
+
+        # Prepare data for UMAP
+        df_for_umap = self.df[columns_for_umap]
+        scaled_umap_df = StandardScaler().fit_transform(df_for_umap)
+
+        # Initialize and fit UMAP
+        reducer = umap.UMAP(
+            random_state=42, metric="euclidean", n_neighbors=60, min_dist=0.5, n_jobs=1
+        )
+        umap_embedding = reducer.fit_transform(scaled_umap_df)
+
+        # Add UMAP results to the DataFrame
+        self.df["umap-2d-one"] = umap_embedding[:, 0]
+        self.df["umap-2d-two"] = umap_embedding[:, 1]
+
+        if self.save_path == "default":
+            filename = f"UMAP_{datetime.now()}.pkl"
+            save_path = f"../private_data/tsne_trained/{filename}"
+        else:
+            save_path = self.save_path
+            filename = save_path.split("/")[-1]
+        with open(save_path, "wb") as f:
+            pickle.dump(self.df, f)
+
+        return self.df
 
 
 class logging:
