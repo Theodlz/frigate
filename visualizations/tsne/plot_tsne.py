@@ -1,7 +1,10 @@
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
 import seaborn as sns
 import pandas as pd
 import numpy as np
+
+rcParams["font.family"] = "Liberation Serif"
 
 
 class TsnePlotter:

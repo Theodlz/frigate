@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 from matplotlib.lines import Line2D
 from matplotlib.colors import LogNorm
+from matplotlib import rcParams
 import corner
 import seaborn as sns
 import plotly.graph_objects as go
@@ -28,6 +29,8 @@ import time
 from pathlib import Path
 import ephem
 from datetime import date as DATE
+
+rcParams["font.family"] = "Liberation Serif"
 
 
 class PrepPlotter:
@@ -855,180 +858,6 @@ class HeatmapNumFiltersPassed:
         self.heatmap(table, self.nightnames)
 
 
-class Sankey:
-    def __init__(self, df, name):
-        self.df = df
-        self.name = name
-
-    def get_flow_counts_for_sankey(self):
-        rock = self.df[
-            (self.df["ssdistnr"] >= 0)
-            & (self.df["ssdistnr"] < 12)
-            & (abs(self.df["ssmagnr"]) < 20)
-        ]
-        notrock = self.df[
-            (self.df["ssdistnr"] < 0)
-            | (self.df["ssdistnr"] > 12)
-            | (abs(self.df["ssmagnr"]) > 20)
-        ]
-        # isdiffpos
-        posdiff = self.df[self.df["isdiffpos"] == 1]
-        negdiff = self.df[self.df["isdiffpos"] == 0]
-        # real
-        real = self.df[self.df["drb"] > 0.5]
-        notreal = self.df[self.df["drb"] < 0.5]
-        # filtered
-        filtered = self.df[self.df["filtered_bool"] == 1]
-        notfiltered = self.df[self.df["filtered_bool"] == 0]
-
-        realpos = pd.merge(real, posdiff, how="inner")
-        realneg = pd.merge(real, negdiff, how="inner")
-        realposnotrock = pd.merge(realpos, notrock, how="inner")
-        realposrock = pd.merge(realpos, rock, how="inner")
-        realposnotrockfilt = pd.merge(realposnotrock, filtered, how="inner")
-        realposnotrocknotfilt = pd.merge(realposnotrock, notfiltered, how="inner")
-        notrealfilt = pd.merge(notreal, filtered, how="inner")
-        notrealnotfilt = pd.merge(notreal, notfiltered, how="inner")
-        realnegdifffilt = pd.merge(realneg, filtered, how="inner")
-        realnegdiffnotfilt = pd.merge(realneg, notfiltered, how="inner")
-        rockfilt = pd.merge(rock, filtered, how="inner")
-        rocknotfilt = pd.merge(rock, notfiltered, how="inner")
-        values = [
-            len(real),
-            len(notreal),
-            len(realpos),
-            len(realneg),
-            len(realposnotrock),
-            len(realposrock),
-            len(realposnotrockfilt),
-            len(realposnotrocknotfilt),
-            len(notrealfilt),
-            len(notrealnotfilt),
-            len(realnegdifffilt),
-            len(realnegdiffnotfilt),
-            len(rockfilt),
-            len(rocknotfilt),
-        ]
-        return values
-
-    def get_dict_for_sankey(self, values):
-        sources = [0, 0, 1, 1, 3, 3, 5, 5, 2, 2, 4, 4, 6, 6]
-        targets = [1, 2, 3, 4, 5, 6, 7, 8, 7, 8, 7, 8, 7, 8]
-        labels = [
-            "Full Night",
-            "real",
-            "not real",
-            "Positive subtraction",
-            "Negative subtraction",
-            "not rock",
-            "rock",
-            "filtered",
-            "not filtered",
-        ]
-
-        stream_colors = [
-            "rgba(31, 119, 180, 0.2)",
-            "rgba(255, 127, 14, 0.2)",
-            "rgba(44, 160, 44, 0.2)",
-            "rgba(214, 39, 40, 0.2)",
-            "rgba(148, 103, 189, 0.2)",
-            "rgba(140, 86, 75, 0.2)",
-            "rgba(227, 119, 194, 0.2)",
-            "rgba(127, 127, 127, 0.2)",
-            "rgba(188, 189, 34, 0.2)",
-            "rgba(255, 255, 255, 0.0)",
-            "rgba(31, 119, 180, 0.2)",
-            "rgba(255, 255, 255, 0.0)",
-            "rgba(44, 160, 44, 0.2)",
-            "rgba(255, 255, 255, 0.0)",
-        ]
-
-        node_colors = [
-            "rgba(31, 119, 180, 0.8)",  # blue
-            "rgba(44, 160, 44, 0.8)",  # green
-            "rgba(255, 69, 0, 0.8)",  # orange
-            "rgba(44, 160, 44, 0.8)",
-            "rgba(255, 69, 0, 0.8)",
-            "rgba(44, 160, 44, 0.8)",
-            "rgba(255, 69, 0, 0.8)",
-            "rgba(44, 160, 44, 0.8)",
-            "rgba(255, 69, 0, 0.8)",
-            "rgba(255, 255, 255, 0.0)",
-            "rgba(31, 119, 180, 0.8)",
-            "rgba(255, 255, 255, 0.0)",
-            "rgba(44, 160, 44, 0.8)",
-            "rgba(255, 255, 255, 0.0)",
-        ]
-
-        data = {
-            "data": [
-                {
-                    "type": "sankey",
-                    "domain": {"x": [0, 1], "y": [0, 1]},
-                    "orientation": "h",
-                    "valueformat": ".0f",
-                    "valuesuffix": " Alerts",
-                    "node": None,
-                    "link": None,
-                }
-            ]
-        }
-
-        data["data"][0]["node"] = {
-            "pad": 15,
-            "thickness": 15,
-            "line": {"color": "black", "width": 0.5},
-            "label": labels,
-            "color": node_colors,
-        }
-
-        data["data"][0]["link"] = {
-            "source": sources,
-            "target": targets,
-            "value": values,
-            "color": stream_colors,
-            "label": None,
-        }
-
-        return data
-
-    def plot_sankey(self, data, night):
-        fig = go.Figure(
-            data=[
-                go.Sankey(
-                    valueformat=".0f",
-                    valuesuffix=" Alerts",
-                    # Define nodes
-                    node=dict(
-                        pad=15,
-                        thickness=15,
-                        line=dict(color="black", width=0.5),
-                        label=data["data"][0]["node"]["label"],
-                        color=data["data"][0]["node"]["color"],
-                    ),
-                    # Add links
-                    link=dict(
-                        source=data["data"][0]["link"]["source"],
-                        target=data["data"][0]["link"]["target"],
-                        value=data["data"][0]["link"]["value"],
-                        label=data["data"][0]["link"]["label"],
-                        color=data["data"][0]["link"]["color"],
-                    ),
-                )
-            ]
-        )
-
-        fig.update_layout(
-            title_text=f"Filtering of ZTF Data from {night}", font_size=10
-        )
-        fig.show()
-
-    def show_sankey(self):
-        values = self.get_flow_counts_for_sankey()
-        data = self.get_dict_for_sankey(values)
-        self.plot_sankey(data, self.name)
-
-
 class ParallelBoxplots:
     def __init__(self, dfs, names, moon_years=[2023, 2024]):
         self.dfs = dfs
@@ -1224,3 +1053,178 @@ class ParallelBoxplots:
         ]
         plt.legend(handles=legend_handles, fontsize=14, loc="lower right")
         plt.show()
+
+
+class Sankey:
+    def __init__(self, df, name):
+        self.df = df.drop(columns=["passed_filters"], errors="ignore")
+        self.name = name
+
+    def get_flow_counts_for_sankey(self):
+        rock = self.df[
+            (self.df["ssdistnr"] >= 0)
+            & (self.df["ssdistnr"] < 12)
+            & (abs(self.df["ssmagnr"]) < 20)
+        ]
+        notrock = self.df[
+            (self.df["ssdistnr"] < 0)
+            | (self.df["ssdistnr"] > 12)
+            | (abs(self.df["ssmagnr"]) > 20)
+        ]
+        # isdiffpos
+        posdiff = self.df[self.df["isdiffpos"] == 1]
+        negdiff = self.df[self.df["isdiffpos"] == 0]
+        # real
+        real = self.df[self.df["drb"] > 0.5]
+        notreal = self.df[self.df["drb"] < 0.5]
+        # filtered
+        filtered = self.df[self.df["filtered_bool"] == 1]
+        notfiltered = self.df[self.df["filtered_bool"] == 0]
+
+        realpos = pd.merge(real, posdiff, how="inner")
+        realneg = pd.merge(real, negdiff, how="inner")
+        realposnotrock = pd.merge(realpos, notrock, how="inner")
+        realposrock = pd.merge(realpos, rock, how="inner")
+        realposnotrockfilt = pd.merge(realposnotrock, filtered, how="inner")
+        realposnotrocknotfilt = pd.merge(realposnotrock, notfiltered, how="inner")
+        notrealfilt = pd.merge(notreal, filtered, how="inner")
+        notrealnotfilt = pd.merge(notreal, notfiltered, how="inner")
+        realnegdifffilt = pd.merge(realneg, filtered, how="inner")
+        realnegdiffnotfilt = pd.merge(realneg, notfiltered, how="inner")
+        rockfilt = pd.merge(rock, filtered, how="inner")
+        rocknotfilt = pd.merge(rock, notfiltered, how="inner")
+        values = [
+            len(real),
+            len(notreal),
+            len(realpos),
+            len(realneg),
+            len(realposnotrock),
+            len(realposrock),
+            len(realposnotrockfilt),
+            len(realposnotrocknotfilt),
+            len(notrealfilt),
+            len(notrealnotfilt),
+            len(realnegdifffilt),
+            len(realnegdiffnotfilt),
+            len(rockfilt),
+            len(rocknotfilt),
+        ]
+        return values
+
+    def get_dict_for_sankey(self, values):
+        sources = [0, 0, 1, 1, 3, 3, 5, 5, 2, 2, 4, 4, 6, 6]
+        targets = [1, 2, 3, 4, 5, 6, 7, 8, 7, 8, 7, 8, 7, 8]
+        labels = [
+            "Full Night",
+            "real",
+            "not real",
+            "Positive subtraction",
+            "Negative subtraction",
+            "not rock",
+            "rock",
+            "filtered",
+            "not filtered",
+        ]
+
+        stream_colors = [
+            "rgba(31, 119, 180, 0.2)",
+            "rgba(255, 127, 14, 0.2)",
+            "rgba(44, 160, 44, 0.2)",
+            "rgba(214, 39, 40, 0.2)",
+            "rgba(148, 103, 189, 0.2)",
+            "rgba(140, 86, 75, 0.2)",
+            "rgba(227, 119, 194, 0.2)",
+            "rgba(127, 127, 127, 0.2)",
+            "rgba(188, 189, 34, 0.2)",
+            "rgba(255, 255, 255, 0.0)",
+            "rgba(31, 119, 180, 0.2)",
+            "rgba(255, 255, 255, 0.0)",
+            "rgba(44, 160, 44, 0.2)",
+            "rgba(255, 255, 255, 0.0)",
+        ]
+
+        node_colors = [
+            "rgba(31, 119, 180, 0.8)",  # blue
+            "rgba(44, 160, 44, 0.8)",  # green
+            "rgba(255, 69, 0, 0.8)",  # orange
+            "rgba(44, 160, 44, 0.8)",
+            "rgba(255, 69, 0, 0.8)",
+            "rgba(44, 160, 44, 0.8)",
+            "rgba(255, 69, 0, 0.8)",
+            "rgba(44, 160, 44, 0.8)",
+            "rgba(255, 69, 0, 0.8)",
+            "rgba(255, 255, 255, 0.0)",
+            "rgba(31, 119, 180, 0.8)",
+            "rgba(255, 255, 255, 0.0)",
+            "rgba(44, 160, 44, 0.8)",
+            "rgba(255, 255, 255, 0.0)",
+        ]
+
+        data = {
+            "data": [
+                {
+                    "type": "sankey",
+                    "domain": {"x": [0, 1], "y": [0, 1]},
+                    "orientation": "h",
+                    "valueformat": ".0f",
+                    "valuesuffix": " Alerts",
+                    "node": None,
+                    "link": None,
+                }
+            ]
+        }
+
+        data["data"][0]["node"] = {
+            "pad": 15,
+            "thickness": 15,
+            "line": {"color": "black", "width": 0.5},
+            "label": labels,
+            "color": node_colors,
+        }
+
+        data["data"][0]["link"] = {
+            "source": sources,
+            "target": targets,
+            "value": values,
+            "color": stream_colors,
+            "label": None,
+        }
+
+        return data
+
+    def plot_sankey(self, data, night):
+        fig = go.Figure(
+            data=[
+                go.Sankey(
+                    valueformat=".0f",
+                    valuesuffix=" Alerts",
+                    # Define nodes
+                    node=dict(
+                        pad=15,
+                        thickness=15,
+                        line=dict(color="black", width=0.5),
+                        label=data["data"][0]["node"]["label"],
+                        color=data["data"][0]["node"]["color"],
+                    ),
+                    # Add links
+                    link=dict(
+                        source=data["data"][0]["link"]["source"],
+                        target=data["data"][0]["link"]["target"],
+                        value=data["data"][0]["link"]["value"],
+                        label=data["data"][0]["link"]["label"],
+                        color=data["data"][0]["link"]["color"],
+                    ),
+                )
+            ]
+        )
+
+        fig.update_layout(
+            title_text=f"Filtering of ZTF Data from {night}", font_size=10
+        )
+        fig.show()
+
+    def show_sankey(self):
+        values = self.get_flow_counts_for_sankey()
+        data = self.get_dict_for_sankey(values)
+        date = Time(self.name, format="jd").datetime.strftime("%Y-%m-%d")
+        self.plot_sankey(data, date)
